@@ -50,3 +50,18 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Temp folder
+temp/
+
+# Images
+*.img
+
+# Tar
+*.gz
+
+# Asm
+user_apps.S
+
+# md5s
+*.md5s
