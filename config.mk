@@ -93,7 +93,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS =
+STUDENTTESTS = test_wrapper
 
 ###########################################################################
 # Object files for your thread library
@@ -124,7 +124,7 @@ AUTOSTACK_OBJS = autostack.o
 # A list of the data files you want copied in from the 410user/files
 # directory (see 410user/progs/cat.c)
 #
-410FILES =
+410FILES = 
 
 ###########################################################################
 # Data files you provide to be included in the RAM disk
@@ -132,5 +132,5 @@ AUTOSTACK_OBJS = autostack.o
 # A list of the data files you want copied in from the user/files
 # directory (see 410user/progs/cat.c)
 #
-STUDENTFILES =
+STUDENTFILES = 
 
