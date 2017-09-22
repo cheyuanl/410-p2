@@ -65,3 +65,6 @@ user_apps.S
 
 # md5s
 *.md5s
+
+# deps
+*.deps
