@@ -67,4 +67,14 @@ user_apps.S
 *.md5s
 
 # deps
-*.deps
+*.dep
+
+# manually add binary
+exec2obj
+idle
+init
+shell
+kernel
+kernel.strip
+test_wrapper
+
