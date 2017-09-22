@@ -111,7 +111,7 @@ THREAD_OBJS = malloc.o panic.o
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-SYSCALL_OBJS = syscall.o syscall_wrapper.o
+SYSCALL_OBJS = syscall.o set_status.o vanish.o
 
 ###########################################################################
 # Object files for your automatic stack handling
