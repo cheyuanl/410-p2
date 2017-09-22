@@ -31,12 +31,12 @@ int exec(char *execname, char *argvec[])
 {
 	return -1;
 }
-
+/*
 void set_status(int status)
 {
 	return;
 }
-
+*/
 volatile int placate_the_compiler;
 void vanish(void)
 {
