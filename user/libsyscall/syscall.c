@@ -21,33 +21,42 @@
  */
 
 #include <syscall.h>
+#include <simics.h>
 
 int fork(void)
 {
+	lprintf("fork was called");
+	MAGIC_BREAK;
 	return -1;
 }
 
 int exec(char *execname, char *argvec[])
 {
+	lprintf("exec was called");
+	MAGIC_BREAK;
 	return -1;
 }
-/*
-void set_status(int status)
-{
-	return;
-}
-*/
-volatile int placate_the_compiler;
-void vanish(void)
-{
-	int blackhole = 867-5309;
 
-	blackhole ^= blackhole;
-	blackhole /= blackhole;
-	*(int *) blackhole = blackhole; /* won't get here */
-	while (1)
-		++placate_the_compiler;
-}
+// void set_status(int status)
+// {
+// 	lprintf("set_status was called");
+// 	MAGIC_BREAK;
+// 	return;
+// }
+
+// volatile int placate_the_compiler;
+// void vanish(void)
+// {
+// 	lprintf("vanish was called");
+// 	MAGIC_BREAK;
+// 	int blackhole = 867-5309;
+
+// 	blackhole ^= blackhole;
+// 	blackhole /= blackhole;
+// 	*(int *) blackhole = blackhole; /* won't get here */
+// 	while (1)
+// 		++placate_the_compiler;
+// }
 
 int wait(int *status_ptr)
 {

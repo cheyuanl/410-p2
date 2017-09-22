@@ -3,9 +3,7 @@
 #include <libsimics/simics.h>
 #include <syscall.h>
 int main(){
-    lprintf("Hello world \n");
-    MAGIC_BREAK;
-    set_status(0);
-    MAGIC_BREAK;
-    return 0;
+    int status = 4;
+    lprintf("You can expect to see the process exit with status: %d\n", status);
+    return status;
 }
