@@ -3,5 +3,5 @@
 
 .global vanish
 vanish: 
-    int     $VANISH_INT     /* Call vanish with trap */
+    int     $VANISH_INT     /* System call */
     ret                     /* Return */
