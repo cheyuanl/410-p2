@@ -76,3 +76,4 @@ init
 shell
 kernel
 kernel.strip
+kernel.log

@@ -93,11 +93,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-<<<<<<< HEAD
 STUDENTTESTS = test_vanish test_print test_readline test_getchar
-=======
-STUDENTTESTS = test_vanish test_print
->>>>>>> 6d44ed76a41df6689471bca4c0af571448d73667
 
 ###########################################################################
 # Object files for your thread library
@@ -115,13 +111,11 @@ THREAD_OBJS = malloc.o panic.o
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-<<<<<<< HEAD
-SYSCALL_OBJS = getchar.o set_status.o vanish.o print.o readline.o syscall.o\
-               wait.o yield.o deschedule.o make_runnable.o gettid.o sleep.o\
-               swexn.o
-=======
-SYSCALL_OBJS = syscall.o set_status.o vanish.o print.o
->>>>>>> 6d44ed76a41df6689471bca4c0af571448d73667
+SYSCALL_OBJS = syscall.o set_status.o vanish.o wait.o yield.o deschedule.o\
+               make_runnable.o gettid.o sleep.o swexn.o getchar.o readline.o\
+               print.o set_term_color.o get_cursor_pos.o set_cursor_pos.o\
+               halt.o readfile.o task_vanish.o new_pages.o remove_pages.o\
+               get_ticks.o misbehave.o 
 
 ###########################################################################
 # Object files for your automatic stack handling
