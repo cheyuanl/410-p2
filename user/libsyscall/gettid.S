@@ -4,5 +4,5 @@
 .global gettid
 
 gettid:
-    int     $GETTID_INT /* System call */
+    int     $GETTID_INT     /* System call */
     ret	                    /* Return */
