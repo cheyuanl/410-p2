@@ -76,5 +76,3 @@ init
 shell
 kernel
 kernel.strip
-test_wrapper
-
