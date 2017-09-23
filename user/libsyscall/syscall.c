@@ -115,11 +115,15 @@ int set_term_color(int color)
 
 int get_cursor_pos(int *row, int *col)
 {
-  return -1;
+    lprintf("get_cursor_pos is called");
+    MAGIC_BREAK;
+    return -1;
 }
 
 int set_cursor_pos(int row, int col)
 {
+    lprintf("set_cursor_pos is called");
+    MAGIC_BREAK;
 	return -1;
 }
 
