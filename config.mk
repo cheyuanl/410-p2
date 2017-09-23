@@ -93,7 +93,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_wrapper
+STUDENTTESTS = test_vanish test_print test_readline test_getchar
 
 ###########################################################################
 # Object files for your thread library
@@ -111,7 +111,9 @@ THREAD_OBJS = malloc.o panic.o
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-SYSCALL_OBJS = syscall.o set_status.o vanish.o
+SYSCALL_OBJS = getchar.o set_status.o vanish.o print.o readline.o syscall.o\
+               wait.o yield.o deschedule.o make_runnable.o gettid.o sleep.o\
+               swexn.o
 
 ###########################################################################
 # Object files for your automatic stack handling

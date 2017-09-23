@@ -7,9 +7,9 @@
 int main(){
     int len;
     int status = 4;
-    char *buf;
+    char *buf = "Hello world";
     int error_code;
-    buf = "Hello world!";
+    //buf = "Hello world!";
     len = strlen(buf);
     MAGIC_BREAK;
     error_code = print(len,buf);

@@ -58,50 +58,50 @@ int exec(char *execname, char *argvec[])
 // 		++placate_the_compiler;
 // }
 
-int wait(int *status_ptr)
-{
-	return -1;
-}
+//int wait(int *status_ptr)
+//{
+//	return -1;
+//}
 
-int yield(int pid)
-{
-	return -1;
-}
+//int yield(int pid)
+//{
+//	return -1;
+//}
+//
+//int deschedule(int *flag)
+//{
+//	return -1;
+//}
+//
+//int make_runnable(int pid)
+//{
+//	return -1;
+//}
+//
+//int gettid(void)
+//{
+//	return -1;
+//}
+//
+//int sleep(int ticks)
+//{
+//	return -1;
+//}
+//
+//int swexn(void *esp3, swexn_handler_t eip, void *arg, ureg_t *newureg)
+//{
+//	return -1;
+//}
 
-int deschedule(int *flag)
-{
-	return -1;
-}
+//int getchar(void)
+//{
+//	return -1;
+//}
 
-int make_runnable(int pid)
-{
-	return -1;
-}
-
-int gettid(void)
-{
-	return -1;
-}
-
-int sleep(int ticks)
-{
-	return -1;
-}
-
-int swexn(void *esp3, swexn_handler_t eip, void *arg, ureg_t *newureg)
-{
-	return -1;
-}
-
-int getchar(void)
-{
-	return -1;
-}
-
-int readline(int size, char *buf)
-{
-	return -1;
-}
+//int readline(int size, char *buf)
+//{
+//	return -1;
+//}
 //
 //int print(int size, char *buf)
 //{
