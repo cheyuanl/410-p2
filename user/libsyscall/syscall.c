@@ -108,60 +108,60 @@ int readline(int size, char *buf)
 //	return -1;
 //}
 
-int set_term_color(int color)
-{
-	return -1;
-}
+// int set_term_color(int color)
+// {
+// 	return -1;
+// }
 
-int get_cursor_pos(int *row, int *col)
-{
-    lprintf("get_cursor_pos is called");
-    MAGIC_BREAK;
-    return -1;
-}
+// int get_cursor_pos(int *row, int *col)
+// {
+//     lprintf("get_cursor_pos is called");
+//     MAGIC_BREAK;
+//     return -1;
+// }
 
-int set_cursor_pos(int row, int col)
-{
-    lprintf("set_cursor_pos is called");
-    MAGIC_BREAK;
-	return -1;
-}
+// int set_cursor_pos(int row, int col)
+// {
+//     lprintf("set_cursor_pos is called");
+//     MAGIC_BREAK;
+// 	return -1;
+// }
 
-void halt(void)
-{
-	while (1)
-		continue;
-}
+// void halt(void)
+// {
+// 	while (1)
+// 		continue;
+// }
 
-int readfile(char *filename, char *buf, int count, int offset)
-{
-	return -1;
-}
+// int readfile(char *filename, char *buf, int count, int offset)
+// {
+// 	return -1;
+// }
 
-void task_vanish(int status)
-{
-	status ^= status;
-	status /= status;
-	while (1)
-		continue;
-}
+// void task_vanish(int status)
+// {
+// 	status ^= status;
+// 	status /= status;
+// 	while (1)
+// 		continue;
+// }
 
-int new_pages(void * addr, int len)
-{
-	return -1;
-}
+// int new_pages(void * addr, int len)
+// {
+// 	return -1;
+// }
 
-int remove_pages(void * addr)
-{
-	return -1;
-}
+// int remove_pages(void * addr)
+// {
+// 	return -1;
+// }
 
-unsigned int get_ticks()
-{
-	return 1;
-}
+// unsigned int get_ticks()
+// {
+// 	return 1;
+// }
 
-void misbehave(int mode)
-{
-	return;
-}
+// void misbehave(int mode)
+// {
+// 	return;
+// }
