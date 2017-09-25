@@ -23,19 +23,19 @@
 #include <syscall.h>
 #include <simics.h>
 
-int fork(void)
-{
-	lprintf("fork was called");
-	MAGIC_BREAK;
-	return -1;
-}
-
-int exec(char *execname, char *argvec[])
-{
-	lprintf("exec was called");
-	MAGIC_BREAK;
-	return -1;
-}
+//int fork(void)
+//{
+//	lprintf("fork was called");
+//	MAGIC_BREAK;
+//	return -1;
+//}
+//
+//int exec(char *execname, char *argvec[])
+//{
+//	lprintf("exec was called");
+//	MAGIC_BREAK;
+//	return -1;
+//}
 
 // void set_status(int status)
 // {
