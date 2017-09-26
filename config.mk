@@ -85,7 +85,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS =
+410TESTS = misbehave_wrap startle
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -99,7 +99,7 @@ STUDENTTESTS = test_vanish test_print test_readline test_getchar test_gettid\
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o
+THREAD_OBJS = malloc.o panic.o thread.o
 
 # Thread Group Library Support.
 #
