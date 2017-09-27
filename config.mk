@@ -93,7 +93,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS =
+STUDENTTESTS = test_vanish test_print test_readline test_getchar test_gettid\
+               test_sleep test_new_pages
 
 ###########################################################################
 # Object files for your thread library
