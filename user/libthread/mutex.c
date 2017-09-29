@@ -28,7 +28,7 @@
 int mutex_init(mutex_t *mp)
 {
     if(!mp){
-        printf("The input pointer is NULL \n");
+        printf("The mutex input pointer is NULL \n");
         return -1;
     }
     else{
