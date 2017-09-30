@@ -58,8 +58,11 @@ void thr_gc() {
     void *stk_lo = (void *)thr_stk + sizeof(thr_stk_t) - stk_size;
     lprintf("thr_stk: %p", thr_stk);
     lprintf("free: %p", stk_lo);
-    free(stk_lo);
-
+    //free(stk_lo);
+    /* First, we need to use remove pages instead of free. 
+     * Second, we should not remove this page, since we are using 
+     * the stack at this point. */
+    //remove_pages(stk_lo);
     int ret_from_child = get_eax();
     lprintf("set status to %d", ret_from_child);
     MAGIC_BREAK;
@@ -85,6 +88,7 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *ret_addr) {
     thr_stk->zero = 0;
 
     lprintf("utid: %d was issued", thr_stk->utid);
+    lprintf("utid addr: %p was issued", &thr_stk->utid);
 
     return thr_stk;
 }
@@ -153,7 +157,8 @@ int thr_create(void *(*func)(void *), void *args) {
      *       nothing, since the stack is corrupted from parents point of
      * view.
      */
-    lprintf("ebp addr %p", &thr_stk->args);
+    lprintf("thr_stk addr %p", thr_stk);
+    lprintf("ebp addr %p", &thr_stk->zero);
     lprintf("esp addr %p", &thr_stk->ret_addr);
     lprintf("func addr %p", func);
     lprintf("ret_addr %p", thr_stk->ret_addr);
@@ -191,6 +196,11 @@ thr_stk_t *get_thr_stk() {
         curr_ebp = *(int **)(curr_ebp);
     }
 
+    /* Return the starting addr of thr_stk head. Which is 
+     * thr_stk->ret_addr. Add one int entry to complement the curr_ebp
+     * size, which is the thr_stk->zero. */
+    curr_ebp = curr_ebp + 1 - sizeof(thr_stk_t)/sizeof(int);
+
     return (thr_stk_t *)curr_ebp;
 }
 
@@ -202,9 +212,7 @@ int thr_getid() {
 
     thr_stk_t *thr_stk = get_thr_stk();
     int my_utid = thr_stk->utid;
-    lprintf("utid = %d", my_utid);
-
-    //    MAGIC_BREAK;
+    //lprintf("utid = %d", my_utid);
 
     return my_utid;
 }
