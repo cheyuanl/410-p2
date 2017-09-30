@@ -4,6 +4,8 @@
 #include <thr_internals.h>
 #include <thread.h>
 #include <string.h>
+#include <mutex.h>
+#include <cond.h>
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
@@ -117,6 +119,9 @@ int thr_init(unsigned int size) {
     main_thr_stk.ktid = gettid();
     main_thr_ktid = main_thr_stk.ktid;
 
+    /* Initialize the malloc lock. Malloc family would not be called
+     * before thr_init. */
+    mutex_init(&malloc_mp);
     //MAGIC_BREAK;
 
     return 0;

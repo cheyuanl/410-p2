@@ -7,6 +7,8 @@
 #ifndef THR_INTERNALS_H
 #define THR_INTERNALS_H
 
+#include <mutex_type.h>
+
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
@@ -14,6 +16,9 @@ void *main_stk_hi;
 void *thr_stk_head;
 /** @brief The current thread stack address to be allocated */
 void *thr_stk_curr;
+
+/** @brief Used for malloc lock */
+mutex_t malloc_mp;
 
 /** @brief The structure of the head block of thread stack */
 typedef struct thr_stk_t thr_stk_t;
@@ -29,8 +34,6 @@ struct thr_stk_t {
 };
 
 int xchg_wrapper(int *lock_available, int val);
-
-//thr_t *get_thr(void);
 
 void *get_ebp();
 
