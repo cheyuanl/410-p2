@@ -129,12 +129,12 @@ int thr_create(void *(*func)(void *), void *args) {
     lprintf("gc: %p", thr_gc);
 
 
-    MAGIC_BREAK;
+//    MAGIC_BREAK;
 
-    int ret = thr_create_asm(&thr_stk->args, &thr_stk->ret_addr, func);
+    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, func);
     lprintf("thr_create_asm return: %p", (void *)ret);
 
-    MAGIC_BREAK;
+//    MAGIC_BREAK;
 
     /* error. no thread created */;
     if (ret == -1) {
@@ -144,9 +144,9 @@ int thr_create(void *(*func)(void *), void *args) {
 
     /* TODO: wait for child */
     lprintf("Hello from parent");
-    while(1) {
-        continue;
-    }
+    //while(1) {
+    //    continue;
+    //}
 
     return ret;
 }
@@ -160,7 +160,7 @@ int thr_getid() {
 
     lprintf("tid = %d", my_tid);
 
-    MAGIC_BREAK;
+//    MAGIC_BREAK;
 
     return my_tid;
 }

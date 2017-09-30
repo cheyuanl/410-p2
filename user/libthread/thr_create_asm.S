@@ -5,12 +5,13 @@ thr_create_asm:
     /* setup */
     push    %ebp
     mov     %esp, %ebp
-    sub     $0x8, %esp
+    //sub     $0x8, %esp
+    push    %esi /* Save %esi */
 
     mov     8(%ebp), %eax  /* first arg */
-    mov     %eax, -4(%ebp) 
+    mov     %eax, %edx 
     mov     12(%ebp), %eax /* second arg */
-    mov     %eax, -8(%ebp) 
+    mov     %eax, %ecx 
     mov     16(%ebp), %eax /* third arg */
     mov     %eax, %esi
 
@@ -18,10 +19,11 @@ thr_create_asm:
     cmp     $0x0, %eax
 
     jne     parent_thread  /* parent thread do nothing */
-    mov     -8(%ebp), %esp
-    mov     -4(%ebp), %ebp
+    mov     %ecx, %esp
+    mov     %edx, %ebp
     jmp     %esi
     
-parent_thread:    
+parent_thread:
+    pop     %esi    
     leave
     ret
