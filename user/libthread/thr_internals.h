@@ -31,11 +31,15 @@ int xchg_wrapper(int *lock_available, int val);
 
 void *get_ebp();
 
+int get_eax();
 
 /** @brief Allocate chunck of memory from (hi-size) to hi */
-void* stk_alloc(void* hi, int nbyte);
+void *stk_alloc(void *hi, int nbyte);
 
 /** @brief Perform thread fork and move chlld thread to the new stack */
 int thr_create_asm(void *ebp, void *esp, void *func);
+
+/** @brief Get the pointer to this thread stack structure */
+thr_stk_t *get_thr_stk();
 
 #endif /* THR_INTERNALS_H */

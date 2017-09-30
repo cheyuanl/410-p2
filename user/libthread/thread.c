@@ -40,11 +40,23 @@ void *stk_alloc(void *hi, int nbyte) {
 }
 
 /** @brief collect the garbage thread */
+/** TODO this part is basically broken! */
 void thr_gc() {
     /** TODO: find the thr_stk_t and free it */
     lprintf("thr_gc was called");
 
+    thr_stk_t *thr_stk = get_thr_stk();
+    void* stk_lo = (void*)thr_stk+sizeof(thr_stk_t)-stk_size;
+    lprintf("thr_stk: %p", thr_stk);
+    lprintf("free: %p", stk_lo);
+    free(stk_lo);
+
+    int ret_from_child = get_eax();
+    lprintf("set status to %d", ret_from_child);
     MAGIC_BREAK;
+
+    set_status(ret_from_child);
+    vanish();
 
     return;
 }
@@ -128,13 +140,12 @@ int thr_create(void *(*func)(void *), void *args) {
     lprintf("ret_addr %p", thr_stk->ret_addr);
     lprintf("gc: %p", thr_gc);
 
-
-//    MAGIC_BREAK;
+    //    MAGIC_BREAK;
 
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, func);
     lprintf("thr_create_asm return: %p", (void *)ret);
 
-//    MAGIC_BREAK;
+    //    MAGIC_BREAK;
 
     /* error. no thread created */;
     if (ret == -1) {
@@ -142,22 +153,24 @@ int thr_create(void *(*func)(void *), void *args) {
         return -1;
     }
 
-    /* TODO: wait for child */
     lprintf("Hello from parent");
-    //while(1) {
-    //    continue;
-    //}
 
     return ret;
 }
 
-int thr_getid() {
+/** TODO: this function call is quiet inefficient */
+thr_stk_t *get_thr_stk() {
     int *curr_ebp = get_ebp();
     while (*curr_ebp != (int)NULL) {
         curr_ebp = *(int **)(curr_ebp);
     }
-    int my_tid = ((thr_stk_t *)curr_ebp)->tid;
 
+    return (thr_stk_t *)curr_ebp;
+}
+
+int thr_getid() {
+    thr_stk_t *thr_stk = get_thr_stk();
+    int my_tid = thr_stk->tid;
     lprintf("tid = %d", my_tid);
 
 //    MAGIC_BREAK;
