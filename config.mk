@@ -99,7 +99,7 @@ STUDENTTESTS = test_thr_create our_startle
 # Object files for your thread library
 ###########################################################################
 THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o thread.o thread_fork.o\
-              get_ebp.o thr_create_asm.o
+              get_ebp.o thr_create_asm.o get_eax.o
 
 # Thread Group Library Support.
 #
@@ -116,7 +116,7 @@ SYSCALL_OBJS = fork.o set_status.o vanish.o wait.o yield.o deschedule.o\
                make_runnable.o gettid.o sleep.o swexn.o getchar.o readline.o\
                print.o set_term_color.o get_cursor_pos.o set_cursor_pos.o\
                halt.o readfile.o task_vanish.o new_pages.o remove_pages.o\
-               get_ticks.o misbehave.o exec.o 
+               get_ticks.o misbehave.o exec.o
 
 ###########################################################################
 # Object files for your automatic stack handling
