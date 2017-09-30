@@ -98,7 +98,7 @@ STUDENTTESTS = test_thr_create our_startle test_cond
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o thr_internals.o\
+THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
               thread.o thread_fork.o thr_create_asm.o get_ebp.o get_eax.o
 
 # Thread Group Library Support.

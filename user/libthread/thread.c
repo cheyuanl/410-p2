@@ -3,6 +3,7 @@
 #include <syscall.h>
 #include <thr_internals.h>
 #include <thread.h>
+#include <string.h>
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
@@ -111,12 +112,12 @@ int thr_init(unsigned int size) {
     thr_stk_curr = thr_stk_head;
 
     lprintf("initializing main_thr_stk");
-    main_thr_stk = memset(&main_thr_stk, 0, sizeof(thr_stk_t));
+    memset(&main_thr_stk, 0, sizeof(thr_stk_t));
     main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
     main_thr_stk.ktid = gettid();
     main_thr_ktid = main_thr_stk.ktid;
 
-    MAGIC_BREAK;
+    //MAGIC_BREAK;
 
     return 0;
 }
@@ -155,7 +156,8 @@ int thr_create(void *(*func)(void *), void *args) {
 
     //    MAGIC_BREAK;
 
-    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, func);
+    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, 
+                             &thr_stk->ktid, func);
     lprintf("thr_create_asm return: %p", (void *)ret);
 
     //    MAGIC_BREAK;

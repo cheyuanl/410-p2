@@ -16,7 +16,7 @@
 
 /* Internal helper functions */
 int empty(cond_t *cv);
-void enq(cond_t *cv, thr_t *thr);
+void enq(cond_t *cv, thr_stk_t *thr);
 int deq(cond_t *cv);
 
 /** @brief cond_init Initialize the condition variable.
@@ -115,7 +115,7 @@ void cond_wait(cond_t *cv, mutex_t *mp)
         mutex_lock(&(cv->mutex));
         int reject = 0;
         /* Enq this calling thread into CV's queue */
-        enq(cv, get_thr());
+        enq(cv, get_thr_stk());
         /* Release the outside mutex, so other thread can acquire this
          * lock.*/
         mutex_unlock(mp);
@@ -153,20 +153,20 @@ void cond_signal(cond_t *cv)
     else{
         /* Get cv_mutex before changing the cv's queue states */
         mutex_lock(&(cv->mutex));
-        int tid;
+        int ktid;
         /* Act only when the cv's queue is not empty */
         if(!empty(cv)){
             /* Get the first sleeping thread's id in the queue */
-            tid = deq(cv);
+            ktid = deq(cv);
             /* Spin on the waking up process. make_runnable would return
-             * 0 only when tid exists and thread-tid is in sleep. Since 
-             * tid comes from the thread queue, we are sure tid exists, 
-             * and thread-tid is going to sleep. But we are not sure if
-             * thread-tid is already in sleep or not, because this
-             * thread might execute before thread-tid really gets into
-             * sleep. So we keep trying make_runnable, until thread-tid
+             * 0 only when ktid exists and thread-ktid is in sleep. Since 
+             * ktid comes from the thread queue, we are sure ktid exists, 
+             * and thread-ktid is going to sleep. But we are not sure if
+             * thread-ktid is already in sleep or not, because this
+             * thread might execute before thread-ktid really gets into
+             * sleep. So we keep trying make_runnable, until thread-ktid
              * goes to sleep and make_runnable wakes it up successfully*/
-            while(make_runnable(tid) < 0)
+            while(make_runnable(ktid) < 0)
                 continue;
         }
         /* Unlock the cv_mutex so that other threads can change the 
@@ -200,16 +200,16 @@ void cond_broadcast(cond_t *cv)
     else{
         /* Get cv_mutex before changing the cv's queue states */
         mutex_lock(&(cv->mutex));
-        int tid;
+        int ktid;
         /* If the cv's queue is not empty, we keep dequeueing */
         while(!empty(cv)){
             /* Dequeue the queue to get the thread id of a sleeping
              * thread. */
-            tid = deq(cv);
+            ktid = deq(cv);
             /* Spin on the condition check of make_runnable to make sure
-             * the thread-tid is actually in sleep and then we wake it
+             * the thread-ktid is actually in sleep and then we wake it
              * up successfully */
-            while(make_runnable(tid) < 0)
+            while(make_runnable(ktid) < 0)
                 continue;
         }
         /* Unlock the cv_mutex so that other threads can change the 
@@ -234,13 +234,14 @@ int empty(cond_t *cv){
  *  
  *  The queue is implemented using linked list. CV holds the head and 
  *  tail pointer of this FIFO queue. When enqueue, we put the new item
- *  in tail. When dequeue, we remove an item from the head. The thr_t
- *  data structure has the "next" pointer, which will point to the next
- *  item(thead) in the queue. 
+ *  in tail. When dequeue, we remove an item from the head. The thr_stk_t
+ *  data structure has the "cv_next" pointer, which will point to the 
+ *  next item(thead) in the queue. 
  *
  *  @return Void
  **/
-void enq(cond_t *cv, thr_t *thr){
+void enq(cond_t *cv, thr_stk_t *thr){
+    lprintf("Enqueue current ktid = %d \n", thr->ktid);
     /* If the queue is empty initially, we intialize the head and tail
      * pointer to this very first thread item. */
     if(empty(cv)){
@@ -248,10 +249,10 @@ void enq(cond_t *cv, thr_t *thr){
         cv->tail = thr;
     }
     else{
-        /* link current tail thread's next pointer to new thread */
-        cv->tail->next = thr;
-        /* Set the next pointer of this new thread as NULL */
-        thr->next = NULL;
+        /* link current tail thread's cv_next pointer to new thread */
+        cv->tail->cv_next = thr;
+        /* Set the cv_next pointer of this new thread as NULL */
+        thr->cv_next = NULL;
         /* Move the tail pointer to the new thread */
         cv->tail = thr;
     }
@@ -267,7 +268,7 @@ void enq(cond_t *cv, thr_t *thr){
  *  otherwise return -1.
  **/
 int deq(cond_t *cv){
-    thr_t *thr;
+    thr_stk_t *thr;
     /* No element in queue. This should not happen, since the caller
      * is responsible to check if the queue is empty or not before even
      * call this method. */
@@ -285,10 +286,11 @@ int deq(cond_t *cv){
         }
         else{
             /* Move head pointer forward */
-            cv->head = cv->head->next;
+            cv->head = cv->head->cv_next;
         }
     }
-    /* We only return the tid field of this thread. */
-    return thr->tid;
+    lprintf("Dequeue ktid = %d \n", thr->ktid);
+    /* We only return the ktid field of this thread. */
+    return thr->ktid;
 }
 

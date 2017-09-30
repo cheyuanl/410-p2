@@ -18,13 +18,13 @@ typedef struct cond {
   /* The head pointer of the waiting thread queue. When deq an item 
    * from the queue, the head move to the next item using thr_t data
    * structure's "next" pointer. */
-  thr_t *head;
+  thr_stk_t *head;
   /* The tail pointer of the waiting thread queue. When enq an item 
    * to the queue, the current tail would link with the new item using 
    * thr_t data structure's "next" pointer. Then the tail pointer would
    * be moved to the new thread item. The new thread item's "next" 
    * pointer is NULL. */
-  thr_t *tail;
+  thr_stk_t *tail;
 } cond_t;
 
 #endif /* _COND_TYPE_H */
