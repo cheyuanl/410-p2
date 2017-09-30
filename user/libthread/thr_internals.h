@@ -23,11 +23,13 @@ struct thr_stk_t {
     thr_stk_t *cv_next; /* pointer to next conditional variable thread */
     thr_stk_t *next;    /* pointer to next thread */
     thr_stk_t *prev;    /* pointer to prev thread */
-    int tid;            /* the id of this thread */
+    int utid;          /* the user thread id */
+    int ktid;          /* the kernel thread id */
     int zero;           /* the value indicates the begining of stack */
 };
 
 int xchg_wrapper(int *lock_available, int val);
+
 thr_t *get_thr(void);
 
 void *get_ebp();

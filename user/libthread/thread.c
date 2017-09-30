@@ -14,14 +14,20 @@
 
 /* --- Define private fields for libthread --- */
 
-/** @brief The next tid to be issued */
-static int global_tid = 0;
+/** @brief The next utid to be issued */
+static int global_utid = 0;
 
 /** @brief The size of a thread stack */
 static int stk_size;
 
 /** @brief The head of linked-list */
 // static thr_stk_t *head = NULL;
+
+/** @brief the thread stack for main(legacy) thread */
+thr_stk_t main_thr_stk;
+
+/** @brief record the kernel tid of main(legacy) thread */
+int main_thr_ktid;
 
 /* --- Function definition --- */
 
@@ -46,7 +52,7 @@ void thr_gc() {
     lprintf("thr_gc was called");
 
     thr_stk_t *thr_stk = get_thr_stk();
-    void* stk_lo = (void*)thr_stk+sizeof(thr_stk_t)-stk_size;
+    void *stk_lo = (void *)thr_stk + sizeof(thr_stk_t) - stk_size;
     lprintf("thr_stk: %p", thr_stk);
     lprintf("free: %p", stk_lo);
     free(stk_lo);
@@ -72,15 +78,16 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *ret_addr) {
     thr_stk->cv_next = 0x0;
     thr_stk->next = 0x0;
     thr_stk->prev = 0x0;
-    thr_stk->tid = global_tid++;
+    thr_stk->utid = global_utid++;
     thr_stk->zero = 0;
 
-    lprintf("tid: %d was issued", thr_stk->tid);
+    lprintf("utid: %d was issued", thr_stk->utid);
 
     return thr_stk;
 }
 
 /** @brief Initiaize the multi-thread stack boundaries */
+/** Assumption: only "main" thread will call this function. */
 int thr_init(unsigned int size) {
     /* NOTE: if this method was called, it means the program
      *       is a multi-thread program, so it shouldn't support
@@ -102,6 +109,12 @@ int thr_init(unsigned int size) {
 
     /* set the candidate address to allocate the stack */
     thr_stk_curr = thr_stk_head;
+
+    lprintf("initializing main_thr_stk");
+    main_thr_stk = memset(&main_thr_stk, 0, sizeof(thr_stk_t));
+    main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
+    main_thr_stk.ktid = gettid();
+    main_thr_ktid = main_thr_stk.ktid;
 
     MAGIC_BREAK;
 
@@ -160,6 +173,12 @@ int thr_create(void *(*func)(void *), void *args) {
 
 /** TODO: this function call is quiet inefficient */
 thr_stk_t *get_thr_stk() {
+    /* quick hack */
+    if (gettid() == main_thr_ktid) {
+        return &main_thr_stk;
+    }
+
+
     int *curr_ebp = get_ebp();
     while (*curr_ebp != (int)NULL) {
         curr_ebp = *(int **)(curr_ebp);
@@ -169,11 +188,16 @@ thr_stk_t *get_thr_stk() {
 }
 
 int thr_getid() {
+    /* quick hack */
+    if(gettid() == main_thr_ktid) {
+        return main_thr_stk.utid; 
+    }
+
     thr_stk_t *thr_stk = get_thr_stk();
-    int my_tid = thr_stk->tid;
-    lprintf("tid = %d", my_tid);
+    int my_utid = thr_stk->utid;
+    lprintf("utid = %d", my_utid);
 
-//    MAGIC_BREAK;
+    //    MAGIC_BREAK;
 
-    return my_tid;
+    return my_utid;
 }
