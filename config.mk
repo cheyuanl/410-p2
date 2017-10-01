@@ -85,7 +85,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = misbehave_wrap startle
+410TESTS = misbehave_wrap startle actual_wait getpid_test1 halt_test\
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -93,7 +93,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_malloc test_thr_create
+STUDENTTESTS = test_malloc test_thr_create our_actual_wait
 
 ###########################################################################
 # Object files for your thread library
