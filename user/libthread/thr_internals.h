@@ -12,13 +12,24 @@
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
+
 /** @brief The head of thread stack */
 void *thr_stk_head;
+
 /** @brief The current thread stack address to be allocated */
 void *thr_stk_curr;
 
 /** @brief Used for malloc lock */
 mutex_t malloc_mp;
+
+/** @brief The state of thread */
+typedef enum thr_state {
+    THR_UNAVAILABLE,
+    THR_RUNNING,
+    THR_SLEEPING,
+    THR_EXITED
+
+} thr_state_t;
 
 /** @brief The structure of the head block of thread stack */
 typedef struct thr_stk_t thr_stk_t;
@@ -28,8 +39,10 @@ struct thr_stk_t {
     thr_stk_t *cv_next; /* pointer to next conditional variable thread */
     thr_stk_t *next;    /* pointer to next thread */
     thr_stk_t *prev;    /* pointer to prev thread */
-    int utid;          /* the user thread id */
-    int ktid;          /* the kernel thread id */
+    int utid;           /* the user thread id */
+    int ktid;           /* the kernel thread id */
+    thr_state_t state;  /* the state of this thread */
+    void* exit_status;  /* the exit status when thr_exit called */
     int zero;           /* the value indicates the begining of stack */
 };
 
