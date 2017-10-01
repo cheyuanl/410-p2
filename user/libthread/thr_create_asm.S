@@ -30,7 +30,7 @@ thr_create_asm:
     jmp     %edi            /* Jump the func for the child thread */
     
 parent_thread:
-    pop     %esi            /* restore %esi */
     pop     %edi            /* restore %edi */
+    pop     %esi            /* restore %esi */
     leave                   /* clean up */
     ret
