@@ -8,6 +8,8 @@
 #include <thr_internals.h>
 #include <thread.h>
 
+#define MY_DEBUG
+
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
 #endif
@@ -36,7 +38,7 @@ int main_thr_ktid;
 /* --- linked-list utility ---- */
 
 /** @brief serach for utid in thread list */
-thr_stk_t *find(int utid) {
+thr_stk_t *thr_find(int utid) {
     thr_stk_t *curr_thr_stk = head;
     while (curr_thr_stk != NULL) {
         if (curr_thr_stk->utid == utid) {
@@ -70,9 +72,7 @@ int thr_insert(thr_stk_t *thr_stk) {
 }
 
 /** @brief delete utid from thread list */
-int thr_remove(int utid) {
-    thr_stk_t *thr_stk = find(utid);
-
+int thr_remove(thr_stk_t *thr_stk) {
     /* utid is not found */
     if (thr_stk == NULL) {
         return -1;
@@ -125,7 +125,7 @@ void *stk_alloc(void *hi, int nbyte) {
 
 int thr_join(int tid, void **statusp) {
     /* check if tid is currently in running */
-    thr_stk_t *thr_stk = find(tid);
+    thr_stk_t *thr_stk = thr_find(tid);
     if (thr_stk == NULL) {
         return -1;
     }
@@ -137,7 +137,7 @@ int thr_join(int tid, void **statusp) {
 
     /* clean up */
     /* TOOD: better error handling, haven't think through */
-    if (thr_remove(tid) != 0 || remove_stk_frame(thr_stk) != 0) {
+    if (thr_remove(thr_stk) != 0 || remove_stk_frame(thr_stk) != 0) {
         return -1;
     }
 
@@ -154,7 +154,7 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
 /** end   critical section? **/
 
 #ifdef MY_DEBUG
-    lprintf("child returned with (int)ret_val: %d", int(ret_val));
+    lprintf("child returned with (int)ret_val: %d", (int)ret_val);
 #endif
 
     /** if func never call thr_exit, it will reach here */

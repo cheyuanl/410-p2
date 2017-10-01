@@ -61,4 +61,11 @@ int thr_create_asm(void *ebp, void *esp, void *ktid, void *func);
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
 
+thr_stk_t *thr_find(int utid);
+
+int thr_insert(thr_stk_t *thr_stk);
+
+int thr_remove(thr_stk_t * utid);
+
+
 #endif /* THR_INTERNALS_H */
