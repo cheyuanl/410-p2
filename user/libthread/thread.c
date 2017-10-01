@@ -52,20 +52,24 @@ void *stk_alloc(void *hi, int nbyte) {
 /** TODO this part is basically broken! */
 void thr_gc() {
     /** TODO: find the thr_stk_t and free it */
+#ifdef MY_DEBUG
     lprintf("thr_gc was called");
 
     thr_stk_t *thr_stk = get_thr_stk();
     void *stk_lo = (void *)thr_stk + sizeof(thr_stk_t) - stk_size;
     lprintf("thr_stk: %p", thr_stk);
     lprintf("free: %p", stk_lo);
+#endif
     //free(stk_lo);
     /* First, we need to use remove pages instead of free. 
      * Second, we should not remove this page, since we are using 
      * the stack at this point. */
     //remove_pages(stk_lo);
     int ret_from_child = get_eax();
+#ifdef MY_DEBUG
     lprintf("set status to %d", ret_from_child);
     MAGIC_BREAK;
+#endif
 
     set_status(ret_from_child);
     vanish();
@@ -87,8 +91,10 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *ret_addr) {
     thr_stk->utid = global_utid++;
     thr_stk->zero = 0;
 
+#ifdef MY_DEBUG
     lprintf("utid: %d was issued", thr_stk->utid);
     lprintf("utid addr: %p was issued", &thr_stk->utid);
+#endif
 
     return thr_stk;
 }
@@ -103,21 +109,29 @@ int thr_init(unsigned int size) {
      * TODO: carefully examiane the sixe
      * TODO: uninstall the auto stack growth? */
 
+#ifdef MY_DEBUG
     lprintf("thr_init was called");
     lprintf("requested stack size: %d", size);
+#endif
 
     /* round-up thread stack size to page size */
     stk_size = (int)PAGE_ROUNDUP(size + sizeof(thr_stk_t));
+#ifdef MY_DEBUG
     lprintf("stk_size was set to %d", stk_size);
+#endif
 
     /* set the head of thread stack to be slightly lower then main_stk_lo */
     thr_stk_head = PAGE_ROUNDDN(main_stk_lo);
+#ifdef MY_DEBUG
     lprintf("stk_head was set to %p", thr_stk_head);
+#endif
 
     /* set the candidate address to allocate the stack */
     thr_stk_curr = thr_stk_head;
 
+#ifdef MY_DEBUG
     lprintf("initializing main_thr_stk");
+#endif
     memset(&main_thr_stk, 0, sizeof(thr_stk_t));
     main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
     main_thr_stk.ktid = gettid();
@@ -137,9 +151,13 @@ int thr_create(void *(*func)(void *), void *args) {
      *       since I don't konw how to find a chunck of
      *       memory on stack...
      */
+#ifdef MY_DEBUG
     lprintf("Allocating space for thread stack");
+#endif
     void *thr_stk_lo = stk_alloc(thr_stk_curr, stk_size);
+#ifdef MY_DEBUG
     lprintf("stk_alloc: %p", thr_stk_lo);
+#endif
     if (thr_stk_lo == NULL) {
         return -1;
     }
@@ -157,18 +175,21 @@ int thr_create(void *(*func)(void *), void *args) {
      *       nothing, since the stack is corrupted from parents point of
      * view.
      */
+#ifdef MY_DEBUG
     lprintf("thr_stk addr %p", thr_stk);
     lprintf("ebp addr %p", &thr_stk->zero);
     lprintf("esp addr %p", &thr_stk->ret_addr);
     lprintf("func addr %p", func);
     lprintf("ret_addr %p", thr_stk->ret_addr);
     lprintf("gc: %p", thr_gc);
-
+#endif
     //    MAGIC_BREAK;
 
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, 
                              &thr_stk->ktid, func);
+#ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
+#endif
 
     //    MAGIC_BREAK;
 
@@ -178,7 +199,9 @@ int thr_create(void *(*func)(void *), void *args) {
         return -1;
     }
 
+#ifdef MY_DEBUG
     lprintf("Hello from parent");
+#endif
 
     return ret;
 }
