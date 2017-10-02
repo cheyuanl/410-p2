@@ -149,7 +149,7 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
     thr_stk_t *thr_stk = get_thr_stk();
 
     /** begin critical section? **/
-    thr_stk->state = THR_RUNNING;
+    thr_stk->state = THR_RUNNABLE;
     void *ret_val = func(args);
 /** end   critical section? **/
 
@@ -167,6 +167,29 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
     assert(0);
     return;
 }
+
+int thr_yield(int tid) {
+    /* Yield to unspecified thread */
+    if(tid == -1)
+        return yield(-1);
+    else{
+        /* Find the thr_stk head using the utid */
+        thr_stk_t *thr_stk = thr_find(tid);
+        /* The thr_stk does not exist */
+        if(!thr_stk){
+            lprintf("The utid %d does not exist. \n", tid);
+            return -1;
+        }
+        /* The specified thread is not runnable. */
+        else if(thr_stk->state != THR_RUNNABLE){
+            lprintf("The utid %d is not runnable. \n", tid);
+            return -1;
+        }
+        else
+            return yield(thr_stk->ktid);
+    }
+}
+
 
 void thr_exit(void *status) {
     thr_stk_t *thr_stk = get_thr_stk();

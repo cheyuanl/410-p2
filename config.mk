@@ -94,7 +94,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_thr_mngmnt test_mutex test_malloc
+STUDENTTESTS = test_thr_mngmnt test_mutex test_malloc test_thr_yield
 
 ###########################################################################
 # Object files for your thread library
