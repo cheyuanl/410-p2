@@ -8,7 +8,7 @@
 #include <thr_internals.h>
 #include <thread.h>
 
-#define MY_DEBUG
+#define MY_DEBUGx
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
@@ -44,6 +44,7 @@ thr_stk_t *thr_find(int utid) {
         if (curr_thr_stk->utid == utid) {
             return curr_thr_stk;
         }
+        curr_thr_stk = curr_thr_stk->next;
     }
     return NULL;
 }
@@ -66,7 +67,9 @@ int thr_insert(thr_stk_t *thr_stk) {
 
         /* set prev */
         thr_stk->prev = head;
-        thr_stk->next->prev = thr_stk;
+        if(thr_stk->next) {
+            thr_stk->next->prev = thr_stk;
+        }
     }
     return 0;
 }
@@ -146,6 +149,9 @@ int thr_join(int tid, void **statusp) {
 
 /** @brief collect the garbage thread */
 void thr_func_wrapper(void *(*func)(void *), void *args) {
+#ifdef MY_DEBUG
+    lprintf("Hello from func wrapper");
+#endif
     thr_stk_t *thr_stk = get_thr_stk();
 
     /** begin critical section? **/
@@ -177,19 +183,20 @@ void thr_exit(void *status) {
     vanish();
 }
 
-thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *ret_addr) {
+thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     void *hi = thr_stk_lo + stk_size;
     thr_stk_t *thr_stk = hi - sizeof(thr_stk_t);
 
     /* fill in header from low addr to high addr */
     /* note: esp should be aligned to 4 */
     assert((int)thr_stk->ret_addr % 4 == 0);
-    thr_stk->ret_addr = ret_addr;
+    thr_stk->ret_addr = vanish;
+    thr_stk->func = func;
     thr_stk->args = args;
     thr_stk->cv_next = NULL;
     thr_stk->next = NULL;
     thr_stk->prev = NULL;
-    thr_stk->utid = global_utid++;
+    thr_stk->utid = global_utid;
     thr_stk->state = THR_UNAVAILABLE;
     thr_stk->zero = 0;
 
@@ -244,6 +251,11 @@ int thr_init(unsigned int size) {
     mutex_init(&malloc_mp);
     // MAGIC_BREAK;
 
+    /* add main thread to thread list */
+    if (thr_insert(&main_thr_stk) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -267,7 +279,7 @@ int thr_create(void *(*func)(void *), void *args) {
     /* move thr_stk_curr down */
     thr_stk_curr -= stk_size;
 
-    thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, thr_exit);
+    thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, (void*)func);
 
 /* NOTE: a thread newly created by thread fork has no software exception
  *       handler registered */
@@ -286,8 +298,7 @@ int thr_create(void *(*func)(void *), void *args) {
 #endif
     //    MAGIC_BREAK;
 
-    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, &thr_stk->ktid,
-                             func);
+    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, &thr_stk->ktid);
 #ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
 #endif
@@ -296,7 +307,9 @@ int thr_create(void *(*func)(void *), void *args) {
 
     /* error. no thread created */;
     if (ret == -1) {
-        free(thr_stk);
+        if(remove_stk_frame(thr_stk) < 0) {
+            lprintf("warning! remove stk frame failed");
+        }
         return -1;
     }
 
@@ -304,7 +317,11 @@ int thr_create(void *(*func)(void *), void *args) {
     lprintf("Hello from parent");
 #endif
 
-    return ret;
+    if (thr_insert(thr_stk) < 0) {
+        return -1;
+    }
+
+    return global_utid++;
 }
 
 /** TODO: this function call is quiet inefficient */

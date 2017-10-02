@@ -35,6 +35,7 @@ typedef enum thr_state {
 typedef struct thr_stk_t thr_stk_t;
 struct thr_stk_t {
     void *ret_addr;     /* the return addr for entry function */
+    void *func;         /* child function wrapper */
     void *args;         /* args for the entry function */
     thr_stk_t *cv_next; /* pointer to next conditional variable thread */
     thr_stk_t *next;    /* pointer to next thread */
@@ -56,7 +57,7 @@ int get_eax();
 void *stk_alloc(void *hi, int nbyte);
 
 /** @brief Perform thread fork and move chlld thread to the new stack */
-int thr_create_asm(void *ebp, void *esp, void *ktid, void *func);
+int thr_create_asm(void *ebp, void *esp, void *ktid);
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
