@@ -1,0 +1,96 @@
+Status of test: Not test yet. Not passed yet. 
+                Passed(unsuitable for misbehave). 
+                Passed all misbehave. 
+
+
+
+actual_wait: Syscall, covers wait vanish fork yield set_status
+             Not passed yet. It has a big buf, which may require
+             auto stack growth.
+
+agility_drill: mutex_lock and release. Require full thr_lib.
+               Not test yet.
+
+beady_test: Simple game for testing the thread lib. Require full thr_lib
+            Not test yet.
+
+bg: Not for p2. Syscall, covers fork exec. 
+    Passed. Usage: bg getpid_test1.
+
+bistromath: Test kernel with large ELF, Stack growth, simple threading.
+            Not test yet.
+
+cat: Syscall, cover readfile print.
+     Passed. Usage: cat something.txt. The something.txt should be listed
+     in the config.mk, and copied to the files directory.
+
+cvar_test: Condition variables. Require full thr_lib.
+           Not test yet.
+
+cyclone: Basic thread behaviors with misbehaviors. Covers thr_create, 
+         thr_join, thr_exit. 
+         Not test yet.
+
+excellent: A multi-threaded application which sometimes experiences
+           a thread crash.
+           Not test yet.
+
+getpid_test1: Syscall, Test gettid
+              Passed. Not suitable for misbehave.
+
+halt_test: Syscall, test halt()
+           Passed. Not suitable for misbehave.
+
+idle, init, shell: Basic program for shell.
+
+join_specific_test: Simple thread_lib test. This test spawns several 
+                    threads and joins on some of them specifically. 
+                    Others are joined on in a more general fashion.
+                    Not test yet.
+
+juggle: A tester in which threads juggle thread juggle threads.
+        Not test yet.
+
+largetest: Creates succesfully larger waves of threads until something 
+           bad. Cover thr_create, thr_join. 
+           Not test yet.
+
+mandelbrot: Complicated test for thr_lib. Require everything.
+            Not test yet.
+
+multitest: Run multiple tests in one program.
+           Not test yet.
+
+mutex_destroy_test: Test for mutex_destroy(). Do not require thr_lib.
+                    Will incur panic, because it destroy the mutex 
+                    before unlock it. 
+                    Passed.
+
+nibbles: Syscall. Test console related syscall.
+         Passed. The speed is too fast though.
+
+paraguay: Condition variables. cond_wait, cond_signal. Require thr_yield.          
+          Do not need thr_join. 
+          Not test yet.
+
+racer: Intensive test of Mutex, condition variable and semaphores.
+       Not test yet.
+
+rwlock_downgrade_read_test: test readers vs downgrading writers 
+                            for rwlock.
+                            Not test yet.
+
+startle: simple test of thread creation.
+         Passed all misbehave.
+
+switzerland: Test whether the auto-stack survives thr_init()
+             Not test yet.
+
+thr_exit_join: Simple test for thread_join and exit. 
+               Not test yet.
+
+wild_test1: Tests program death by unnatural causes. 
+            Passed. Will trigger the Page fault and dump the reg values. 
+
+
+

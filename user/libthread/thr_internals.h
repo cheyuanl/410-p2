@@ -25,7 +25,7 @@ mutex_t malloc_mp;
 /** @brief The state of thread */
 typedef enum thr_state {
     THR_UNAVAILABLE,
-    THR_RUNNING,
+    THR_RUNNABLE,
     THR_SLEEPING,
     THR_EXITED
 

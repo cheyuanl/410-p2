@@ -8,7 +8,7 @@
 #include <mutex.h>
 #include <cond.h>
 
-#define THREAD_NUM 2
+#define THREAD_NUM 1
 int done = 0;
 mutex_t mp;
 cond_t cv;

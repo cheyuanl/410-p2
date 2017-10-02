@@ -23,6 +23,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <simics.h>
+#include <syscall.h>
 
 /*
  * This function is called by the assert() macro defined in assert.h;
@@ -40,7 +41,8 @@ void panic(const char *fmt, ...)
 	vprintf(fmt, vl);
 	va_end(vl);
 	printf("\n");
-
+        task_vanish(-1);
+/*
 	volatile static int side_effect = 0;
 	while (1) {
 		// exact authorship uncertain, popularized by Heinlein
@@ -48,4 +50,5 @@ void panic(const char *fmt, ...)
 		lprintf("When in danger or in doubt, run in circles, scream and shout.");
 		++side_effect;
 	}
+*/
 }

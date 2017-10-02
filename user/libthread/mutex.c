@@ -6,10 +6,12 @@
  *  @author Zhipeng zhao (zzhao1)
  *  @bug No known bugs.
  */
+#include <assert.h>
 #include <stdio.h>
 #include <mutex.h>
 #include <libsimics/simics.h>
 #include <thr_internals.h>
+#include <syscall.h>
 
 /** @brief mutex_init Initialize the mutex object.
  *  
@@ -28,10 +30,11 @@
 int mutex_init(mutex_t *mp)
 {
     if(!mp){
-        printf("The mutex input pointer is NULL \n");
+        printf("Mutex_init: The mutex input pointer is NULL \n");
+        lprintf("Mutex_init: The mutex input pointer is NULL \n");
         return -1;
     }
-    else{
+    else{            
         mp->lock_available = 1;
         mp->init = 1;
     }
@@ -50,18 +53,15 @@ int mutex_init(mutex_t *mp)
 void mutex_destroy(mutex_t *mp)
 {
     if(!mp){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Mutex_destroy: The input pointer is NULL");
     }
     /* Mutex is uninitialized/destroyed */
     else if(!mp->init){
-        printf("The mutex has not been initialized! \n");
-        while(1);
+        panic("Mutex_destroy: The mutex has not been initialized!");
     }
     /* Mutex is locked */
     else if(!mp->lock_available){
-        printf("The mutex is locked! \n");
-        while(1);
+        panic("Mutex_destroy: The mutex has not been unlocked!");
     }
     else{
         /* Clear init, so that the lock/unlock could not be directly
@@ -83,13 +83,11 @@ void mutex_destroy(mutex_t *mp)
 void mutex_lock(mutex_t *mp)
 {
     if(!mp){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Mutex_lock: The input pointer is NULL");
     }
     /* Mutex is uninitialized/destroyed */
     else if(!mp->init){
-        printf("The mutex has not been initialized! \n");
-        while(1);
+        panic("Mutex_lock: The mutex has not been initialized!");
     }
     /* Spin-wait to get the lock */
     else {
@@ -109,19 +107,16 @@ void mutex_lock(mutex_t *mp)
 void mutex_unlock(mutex_t *mp)
 {
     if(!mp){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Mutex_unlock: The input pointer is NULL");
     }
     /* Mutex is uninitialized/destroyed */
     else if(!mp->init){
-        printf("The mutex has not been initialized! \n");
-        while(1);
+        panic("Mutex_unlock: The mutex has not been initialized!");
     }
     else{
         /* expect 0 */
         if(xchg_wrapper(&(mp->lock_available),1)){
-            printf("Should do unlock after lock! \n");
-            while(1);
+            panic("Mutex_unlock: Nothing to unlock!");
         }
     }
 }
