@@ -67,7 +67,7 @@ int thr_insert(thr_stk_t *thr_stk) {
 
         /* set prev */
         thr_stk->prev = head;
-        if(thr_stk->next) {
+        if (thr_stk->next) {
             thr_stk->next->prev = thr_stk;
         }
     }
@@ -133,7 +133,13 @@ int thr_join(int tid, void **statusp) {
         return -1;
     }
 
+    mutex_lock(&thr_stk->mp);
     /* TODO: conditional wait */
+    while (thr_stk->status != THR_EXITED) {
+        cond_wait(&thr_stk->cv, &thr_stk->mp);
+    }
+
+    mutex_unlock(&thr_stk->mp);
 
     /* set status */
     *statusp = thr_stk->exit_status;
@@ -176,40 +182,44 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
 
 int thr_yield(int tid) {
     /* Yield to unspecified thread */
-    if(tid == -1)
+    if (tid == -1)
         return yield(-1);
-    else{
+    else {
         /* Find the thr_stk head using the utid */
         thr_stk_t *thr_stk = thr_find(tid);
         /* The thr_stk does not exist */
-        if(!thr_stk){
+        if (!thr_stk) {
             lprintf("The utid %d does not exist. \n", tid);
             return -1;
         }
         /* The specified thread is not runnable. */
-        else if(thr_stk->state != THR_RUNNABLE){
+        else if (thr_stk->state != THR_RUNNABLE) {
             lprintf("The utid %d is not runnable. \n", tid);
             return -1;
-        }
-        else{
+        } else {
 #ifdef MY_DEBUG
-            lprintf("thr->utid = %d, thr->ktid = %d \n",
-                    thr_stk->utid, thr_stk->ktid);
+            lprintf("thr->utid = %d, thr->ktid = %d \n", thr_stk->utid,
+                    thr_stk->ktid);
             lprintf("thr_stk addr = %p \n", thr_stk);
             MAGIC_BREAK;
-#endif            
+#endif
             return yield(thr_stk->ktid);
         }
     }
 }
 
-
 void thr_exit(void *status) {
     thr_stk_t *thr_stk = get_thr_stk();
     assert(thr_stk != NULL);
 
+    mutex_lock(&thr_stk->mp);
+
     /* store status into internal struct */
     thr_stk->exit_status = status;
+    thr_stk->state = THR_EXITED;
+    cond_signal(&thr_stk->cv);
+
+    mutex_unlock(&thr_stk->mp);
     vanish();
 }
 
@@ -229,6 +239,9 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     thr_stk->utid = global_utid;
     thr_stk->state = THR_UNAVAILABLE;
     thr_stk->zero = 0;
+
+    mutex_init(&thr_stk->mp);
+    cond_init(&thr_stk->cv);
 
 #ifdef MY_DEBUG
     lprintf("utid: %d was issued", thr_stk->utid);
@@ -309,7 +322,7 @@ int thr_create(void *(*func)(void *), void *args) {
     /* move thr_stk_curr down */
     thr_stk_curr -= stk_size;
 
-    thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, (void*)func);
+    thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, (void *)func);
 
 /* NOTE: a thread newly created by thread fork has no software exception
  *       handler registered */
@@ -339,7 +352,7 @@ int thr_create(void *(*func)(void *), void *args) {
 
     /* error. no thread created */;
     if (ret == -1) {
-        if(remove_stk_frame(thr_stk) < 0) {
+        if (remove_stk_frame(thr_stk) < 0) {
             lprintf("warning! remove stk frame failed");
         }
         return -1;

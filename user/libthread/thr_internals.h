@@ -8,6 +8,7 @@
 #define THR_INTERNALS_H
 
 #include <mutex_type.h>
+#include <cond_type.h>
 
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
@@ -44,6 +45,8 @@ struct thr_stk_t {
     int ktid;           /* the kernel thread id */
     thr_state_t state;  /* the state of this thread */
     void* exit_status;  /* the exit status when thr_exit called */
+    mutex_t mp;         /* mutex */
+    cond_t cv;          /* conditional variable */
     int zero;           /* the value indicates the begining of stack */
 };
 

@@ -4,6 +4,7 @@
 
 #ifndef _COND_TYPE_H
 #define _COND_TYPE_H
+
 #include <mutex_type.h>
 #include <thr_internals.h>
 
