@@ -191,8 +191,15 @@ int thr_yield(int tid) {
             lprintf("The utid %d is not runnable. \n", tid);
             return -1;
         }
-        else
+        else{
+#ifdef MY_DEBUG
+            lprintf("thr->utid = %d, thr->ktid = %d \n",
+                    thr_stk->utid, thr_stk->ktid);
+            lprintf("thr_stk addr = %p \n", thr_stk);
+            MAGIC_BREAK;
+#endif            
             return yield(thr_stk->ktid);
+        }
     }
 }
 
@@ -321,7 +328,9 @@ int thr_create(void *(*func)(void *), void *args) {
 #endif
     //    MAGIC_BREAK;
 
-    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr, &thr_stk->ktid);
+    int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
+    /* Store the ktid back to the newly created thread */
+    thr_stk->ktid = ret;
 #ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
 #endif

@@ -5,7 +5,6 @@ thr_create_asm:
     /* setup */
     push    %ebp
     mov     %esp, %ebp
-    push    %esi            /* save %esi */
 
     /* fetch arguments */
     mov     8(%ebp),  %edx  /* 1st arg, addr of first element in child
@@ -14,7 +13,6 @@ thr_create_asm:
     mov     12(%ebp), %ecx  /* 2nd arg, addr of last element in child
                              * stack, which is expected %esp after
                              * thread fork. */
-    mov     16(%ebp), %esi  /* 3rd arg, addr of ktid in child stack */
 
     int     $THREAD_FORK_INT
     cmp     $0x0, %eax
@@ -24,10 +22,8 @@ thr_create_asm:
                              * thread */
     mov     %edx, %ebp      /* restore the expected %ebp for the child
                              * thread */
-    mov     %eax, (%esi)    /* store the ktid returned by syscall */
     jmp     thr_func_wrapper/* Jump the func for the child thread */
 
 parent_thread:
-    pop     %esi            /* restore %esi */
     leave                   /* clean up */
     ret

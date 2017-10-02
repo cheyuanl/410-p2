@@ -57,7 +57,7 @@ int get_eax();
 void *stk_alloc(void *hi, int nbyte);
 
 /** @brief Perform thread fork and move chlld thread to the new stack */
-int thr_create_asm(void *ebp, void *esp, void *ktid);
+int thr_create_asm(void *ebp, void *esp);
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();

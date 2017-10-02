@@ -4,9 +4,10 @@
 #include <assert.h>
 #include <cond.h>
 #include <mutex.h>
+#include <thr_internals.h>
 
 #define RUN_THR_NUM 3
-#define TEST4
+#define TEST5
 /* 4 threads are runnable, 1 thread is sleeping. */
 /* test 1, utid 0 -> 3 would run in a roundrobin fashion */
 
@@ -16,6 +17,8 @@
 /* test 3, thr_yield(4), should return not runnable error. */
 
 /* test 4, thr_yield(1), Only thread 1 is visible */
+
+/* test 5, thr_yield(5), should return non-exist error */
 
 int done = 0;
 mutex_t mp;
@@ -34,7 +37,8 @@ void* runnable(void* i) {
         cond_signal(&cv);
     mutex_unlock(&mp);
     lprintf("UNLOCK: Utid %d, Ktid %d \n", thr_getid(), gettid());
-
+    lprintf("The done = %d \n", done);
+    MAGIC_BREAK;
     while(1){
 //        continue;
 #ifdef TEST4
@@ -50,6 +54,7 @@ void* runnable(void* i) {
 }
 
 void* insleep(void* i) {
+    thr_stk_t * thr_stk = get_thr_stk();
     /* make sure the thread at least register before sleep */
     mutex_lock(&mp);
     lprintf("LOCK: Utid %d, Ktid %d \n", thr_getid(), gettid());
@@ -60,6 +65,7 @@ void* insleep(void* i) {
     lprintf("UNLOCK: Utid %d, Ktid %d \n", thr_getid(), gettid());
 
     int rej = 0;
+    thr_stk->state = THR_SLEEPING;
     deschedule(&rej);
     panic("This should never show up");
     vanish();
@@ -98,12 +104,17 @@ int main() {
             panic("thr_yield return error.");
 #endif
 #ifdef TEST3
-        ret = thr_yield(4);
+        ret = thr_yield(RUN_THR_NUM+1);
         if(ret != 0)
             panic("thr_yield return error.");
 #endif
 #ifdef TEST4
         ret = thr_yield(1);
+        if(ret != 0)
+            panic("thr_yield return error.");
+#endif
+#ifdef TEST5
+        ret = thr_yield(RUN_THR_NUM+2);
         if(ret != 0)
             panic("thr_yield return error.");
 #endif
