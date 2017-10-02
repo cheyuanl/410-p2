@@ -8,7 +8,7 @@
 #include <thr_internals.h>
 #include <thread.h>
 
-#define MY_DEBUGx
+#define MY_DEBUG
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
@@ -135,7 +135,7 @@ int thr_join(int tid, void **statusp) {
 
     mutex_lock(&thr_stk->mp);
     /* TODO: conditional wait */
-    while (thr_stk->status != THR_EXITED) {
+    while (thr_stk->state != THR_EXITED) {
         cond_wait(&thr_stk->cv, &thr_stk->mp);
     }
 
@@ -288,10 +288,14 @@ int thr_init(unsigned int size) {
     main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
     main_thr_stk.ktid = gettid();
     main_thr_ktid = main_thr_stk.ktid;
+    main_thr_stk.state = THR_UNAVAILABLE;
+
 
     /* Initialize the malloc lock. Malloc family would not be called
      * before thr_init. */
     mutex_init(&malloc_mp);
+    mutex_init(&main_thr_stk.mp);
+    cond_init(&main_thr_stk.cv);
     // MAGIC_BREAK;
 
     /* add main thread to thread list */

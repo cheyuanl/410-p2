@@ -20,13 +20,13 @@ void enq(cond_t *cv, thr_stk_t *thr);
 int deq(cond_t *cv);
 
 /** @brief cond_init Initialize the condition variable.
- *  
+ *
  *  This method should be called exact once before calling other methods.
- *  Or this method could be called after the conditional variable has 
- *  been successfully destroyed. It's illegal to call this method 
+ *  Or this method could be called after the conditional variable has
+ *  been successfully destroyed. It's illegal to call this method
  *  multiple times after initialization(before the condition variable is
- *  destroyed). 
- *  
+ *  destroyed).
+ *
  *
  * @return 0 on success, negative number on error
  */
@@ -59,11 +59,11 @@ int cond_init(cond_t *cv)
 
 
 /** @brief cond_destroy Destroy the cond variable.
- * 
+ *
  *  Deassert the init field, so the object become uninitialized/
  *  destroyed. It's illegal to call this function when the CV_Mutex
- *  is still locked or threads are still blocked. 
- *  
+ *  is still locked or threads are still blocked.
+ *
  *  @return Void
  **/
 
@@ -95,7 +95,7 @@ void cond_destroy(cond_t *cv)
 
 /** @brief cond_wait Atomically realse the lock and block the calling
  *  thread. Will re-acquire the lock before leaving this function.
- * 
+ *
  *  @return Void
  **/
 
@@ -119,10 +119,10 @@ void cond_wait(cond_t *cv, mutex_t *mp)
         /* Release the outside mutex, so other thread can acquire this
          * lock.*/
         mutex_unlock(mp);
-        /* Release the cv_mutex, so that other thread can use 
+        /* Release the cv_mutex, so that other thread can use
          * cond_signal or cond_broadcast to change cv's queue state */
         mutex_unlock(&(cv->mutex));
-        /* System call to let the calling thread go to sleep. This 
+        /* System call to let the calling thread go to sleep. This
          * syscall itself is atomic with respect to the make_runnable()*/
         deschedule(&reject);
         /* Reacquire the outside lock, so when we exit, we're in
@@ -132,10 +132,10 @@ void cond_wait(cond_t *cv, mutex_t *mp)
 }
 
 /** @brief cond_signal Signal the thread under cond_wait.
- * 
- *  This method will only wake up the very first thread in the cv's 
+ *
+ *  This method will only wake up the very first thread in the cv's
  *  queue. If there is no sleeping thread in the queue, we do nothing.
- *  
+ *
  *  @return Void
  **/
 
@@ -158,8 +158,8 @@ void cond_signal(cond_t *cv)
             /* Get the first sleeping thread's id in the queue */
             ktid = deq(cv);
             /* Spin on the waking up process. make_runnable would return
-             * 0 only when ktid exists and thread-ktid is in sleep. Since 
-             * ktid comes from the thread queue, we are sure ktid exists, 
+             * 0 only when ktid exists and thread-ktid is in sleep. Since
+             * ktid comes from the thread queue, we are sure ktid exists,
              * and thread-ktid is going to sleep. But we are not sure if
              * thread-ktid is already in sleep or not, because this
              * thread might execute before thread-ktid really gets into
@@ -168,21 +168,21 @@ void cond_signal(cond_t *cv)
             while(make_runnable(ktid) < 0)
                 continue;
         }
-        /* Unlock the cv_mutex so that other threads can change the 
+        /* Unlock the cv_mutex so that other threads can change the
          * cv's states */
         mutex_unlock(&(cv->mutex));
     }
 }
 
 /** @brief cond_broadcast Wake up all the waiting threads
- * 
+ *
  *  If there is no sleeping thread in the queue, we do nothing. The
  *  threads that are woken up by this method would not go to sleep before
  *  the end of this method, because right now we hold the cv_mutex. The
  *  thread that want to go to sleep again has to acquire the cv_mutex
  *  first. Since we have the cv_mutex now, the thread would not go to
  *  sleep during the execution of waking up.
- *  
+ *
  *  @return Void
  **/
 void cond_broadcast(cond_t *cv)
@@ -210,7 +210,7 @@ void cond_broadcast(cond_t *cv)
             while(make_runnable(ktid) < 0)
                 continue;
         }
-        /* Unlock the cv_mutex so that other threads can change the 
+        /* Unlock the cv_mutex so that other threads can change the
          * cv's states */
         mutex_unlock(&(cv->mutex));
     }
@@ -220,7 +220,7 @@ void cond_broadcast(cond_t *cv)
 
 
 /** @brief empty Check if cv's queue is empty or not.
- *  
+ *
  *  @return 1 if the queue is empty, 0 if not.
  **/
 
@@ -228,13 +228,13 @@ int empty(cond_t *cv){
     return (cv->head == NULL);
 }
 
-/** @brief enq Put a thread into cv's waiting thread queue. 
- *  
- *  The queue is implemented using linked list. CV holds the head and 
+/** @brief enq Put a thread into cv's waiting thread queue.
+ *
+ *  The queue is implemented using linked list. CV holds the head and
  *  tail pointer of this FIFO queue. When enqueue, we put the new item
  *  in tail. When dequeue, we remove an item from the head. The thr_stk_t
- *  data structure has the "cv_next" pointer, which will point to the 
- *  next item(thead) in the queue. 
+ *  data structure has the "cv_next" pointer, which will point to the
+ *  next item(thead) in the queue.
  *
  *  @return Void
  **/
@@ -248,7 +248,7 @@ void enq(cond_t *cv, thr_stk_t *thr){
     }
     else{
         /* link current tail thread's cv_next pointer to new thread */
-        cv->tail->cv_next = thr;
+        ((thr_stk_t*)cv->tail)->cv_next = thr;
         /* Set the cv_next pointer of this new thread as NULL */
         thr->cv_next = NULL;
         /* Move the tail pointer to the new thread */
@@ -257,8 +257,8 @@ void enq(cond_t *cv, thr_stk_t *thr){
 }
 
 
-/** @brief deq Remove a thread from cv's waiting thread queue. 
- *  
+/** @brief deq Remove a thread from cv's waiting thread queue.
+ *
  *  We remove a thread from the head of the queue. If this is the last
  *  thread item, we set the head and tail pointers as NULL.
  *
@@ -284,7 +284,7 @@ int deq(cond_t *cv){
         }
         else{
             /* Move head pointer forward */
-            cv->head = cv->head->cv_next;
+            cv->head = (void*)(((thr_stk_t*)cv->head)->cv_next);
         }
     }
     lprintf("Dequeue ktid = %d \n", thr->ktid);
