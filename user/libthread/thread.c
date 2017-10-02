@@ -8,7 +8,7 @@
 #include <thr_internals.h>
 #include <thread.h>
 
-#define MY_DEBUG
+//#define MY_DEBUG
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))

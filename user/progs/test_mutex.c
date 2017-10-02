@@ -6,7 +6,7 @@
 #include <thr_internals.h>
 #include <mutex.h>
 
-#define TEST6
+#define TEST5
 
 int main(){
     printf("The expected value is in ()\n");

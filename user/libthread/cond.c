@@ -12,7 +12,7 @@
 #include <libsimics/simics.h>
 #include <thr_internals.h>
 #include <syscall.h>
-
+#include <assert.h>
 
 /* Internal helper functions */
 int empty(cond_t *cv);
@@ -33,13 +33,17 @@ int deq(cond_t *cv);
 int cond_init(cond_t *cv)
 {
     if(!cv){
-        printf("The input pointer is NULL \n");
+        printf("Cond_init: The input pointer is NULL \n");
+        lprintf("Cond_init: The input pointer is NULL \n");
         return -1;
     }
     else{
         /* Initialize the mutex */
         if(mutex_init(&(cv->mutex)) < 0){
-            printf("Failed to initialize condition variable mutex! \n");
+            printf("Cond_init: Failed to initialize condition variable"
+                   " mutex! \n");
+            lprintf("Cond_init: Failed to initialize condition variable"
+                   " mutex! \n");
             return -1;
         }
         else{
@@ -66,23 +70,20 @@ int cond_init(cond_t *cv)
 void cond_destroy(cond_t *cv)
 {
     if(!cv){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Cond_destroy: The input pointer is NULL");
     }
     /* Condition variable is uninitialized/destroyed */
     else if(!cv->init){
-        printf("The condition variable has not been initialized! \n");
-        while(1);
+        panic("Cond_destroy: The condition variable has not been "
+              "initialized!");
     }
     /* The CV_Mutex is locked */
     else if(!cv->mutex.lock_available){
-        printf("Some threads are still locked! \n");
-        while(1);
+        panic("Cond_destroy: Some threads are still locked!");
     }
     /* Some threads are still in sleep */
     else if(cv->head != NULL){
-        printf("Some threads are still blocked! \n");
-        while(1);
+        panic("Cond_destroy: Some threads are still blocked!");
     }
     else{
         /* Clear init, so that the lock/unlock could not be directly
@@ -101,13 +102,12 @@ void cond_destroy(cond_t *cv)
 void cond_wait(cond_t *cv, mutex_t *mp)
 {
     if(!cv || !mp){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Cond_wait: The input pointer is NULL");
     }
     /* Condition variable is uninitialized/destroyed */
     else if(!cv->init){
-        printf("The condition variable has not been initialized! \n");
-        while(1);
+        panic("Cond_wait: The condition variable has not been "
+              "initialized!");
     }
     /* We are ready to release the lock and block the thread */
     else {
@@ -142,13 +142,12 @@ void cond_wait(cond_t *cv, mutex_t *mp)
 void cond_signal(cond_t *cv)
 {
     if(!cv){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Cond_signal: The input pointer is NULL");
     }
     /* Condition variable is uninitialized/destroyed */
     else if(!cv->init){
-        printf("The condition variable has not been initialized! \n");
-        while(1);
+        panic("Cond_signal: The condition variable has not been "
+              "initialized!");
     }
     else{
         /* Get cv_mutex before changing the cv's queue states */
@@ -189,13 +188,12 @@ void cond_signal(cond_t *cv)
 void cond_broadcast(cond_t *cv)
 {
     if(!cv){
-        printf("The input pointer is NULL \n");
-        while(1);
+        panic("Cond_broadcast: The input pointer is NULL");
     }
     /* Condition variable is uninitialized/destroyed */
     else if(!cv->init){
-        printf("The condition variable has not been initialized! \n");
-        while(1);
+        panic("Cond_broadcast: The condition variable has not been "
+              "initialized!");
     }
     else{
         /* Get cv_mutex before changing the cv's queue states */
@@ -241,7 +239,7 @@ int empty(cond_t *cv){
  *  @return Void
  **/
 void enq(cond_t *cv, thr_stk_t *thr){
-    lprintf("Enqueue current ktid = %d \n", thr->ktid);
+    lprintf("Enqueue ktid = %d \n", thr->ktid);
     /* If the queue is empty initially, we intialize the head and tail
      * pointer to this very first thread item. */
     if(empty(cv)){
@@ -273,7 +271,7 @@ int deq(cond_t *cv){
      * is responsible to check if the queue is empty or not before even
      * call this method. */
     if(empty(cv)){
-        printf("no elements in queue! \n");
+        panic("Cond_variable: dequeue an empty queue!");
         return -1;
     }
     else{
