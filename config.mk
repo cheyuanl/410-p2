@@ -86,7 +86,7 @@ UPDATE_METHOD = afs
 # directory
 #
 410TESTS = misbehave_wrap startle actual_wait thr_exit_join\
-           mutex_destroy_test paraguay cyclone
+           mutex_destroy_test paraguay cyclone agility_drill
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -108,7 +108,7 @@ THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
 # P2" we give you can't build libthrgrp.a.  Once you set up your thread
 # library and fix THREAD_OBJS above, uncomment this line to enable building
 # libthrgrp.a:
-#410USER_LIBS_EARLY += libthrgrp.a
+410USER_LIBS_EARLY += libthrgrp.a
 
 ###########################################################################
 # Object files for your syscall wrappers

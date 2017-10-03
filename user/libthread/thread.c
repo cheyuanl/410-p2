@@ -47,6 +47,9 @@ mutex_t create_mp;
 /** @brief lock to sync thread linked-list operation */
 mutex_t thr_stk_list_mp;
 
+/** @breif lock for join operation */
+mutex_t join_mp;
+
 
 /* --- linked-list utility ---- */
 
@@ -127,8 +130,12 @@ int thr_remove(thr_stk_t *thr_stk) {
 
 /** @brief free  the thread stack */
 int remove_stk_frame(thr_stk_t *thr_stk) {
+    mutex_lock(&thr_stk->mp);
     void *stk_lo = (void *)thr_stk + sizeof(thr_stk_t) - stk_size;
+    mutex_lock(&join_mp);
+    mutex_unlock(&thr_stk->mp);
     int status = remove_pages(stk_lo);
+    mutex_unlock(&join_mp);
     return status;
 }
 
@@ -149,6 +156,9 @@ void *stk_alloc(void *hi, int nbyte) {
 }
 
 int thr_join(int tid, void **statusp) {
+
+    mutex_lock(&join_mp);
+
     /* check if tid is currently in running */
     thr_stk_t *thr_stk = thr_find(tid);
     if (thr_stk == NULL) {
@@ -156,19 +166,31 @@ int thr_join(int tid, void **statusp) {
     }
 
     mutex_lock(&thr_stk->mp);
+    mutex_unlock(&join_mp);
+
     /* TODO: conditional wait */
     while (thr_stk->state != THR_EXITED) {
         cond_wait(&thr_stk->cv, &thr_stk->mp);
     }
 
-    mutex_unlock(&thr_stk->mp);
+    if (thr_stk->join) {
+        return -1;
+    }
+    else {
+        thr_stk->join = 1;
+    }
 
-    /* set status */
+    /* st status */
     *statusp = thr_stk->exit_status;
+
+    mutex_unlock(&thr_stk->mp);
 
     /* clean up */
     /* TOOD: better error handling, haven't think through */
-    if (thr_remove(thr_stk) != 0 || remove_stk_frame(thr_stk) != 0) {
+    if (thr_remove(thr_stk) != 0){
+        return -1;
+    }
+    if (remove_stk_frame(thr_stk) != 0) {
         return -1;
     }
 
@@ -247,7 +269,7 @@ void thr_exit(void *status) {
     /* store status into internal struct */
     thr_stk->exit_status = status;
     thr_stk->state = THR_EXITED;
-    cond_signal(&thr_stk->cv);
+    cond_broadcast(&thr_stk->cv);
 
     mutex_unlock(&thr_stk->mp);
     vanish();
@@ -271,6 +293,7 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     thr_stk->ktid = 0;
     thr_stk->state = THR_UNAVAILABLE;
     thr_stk->zero = 0;
+    thr_stk->join = 0;
 
     mutex_init(&thr_stk->mp);
     cond_init(&thr_stk->cv);
@@ -344,6 +367,9 @@ int thr_init(unsigned int size) {
 
     /* Initialize the mutex for thread-list */
     mutex_init(&thr_stk_list_mp);
+
+    /* Initialize the mutex for thr_join */
+    mutex_init(&join_mp);
 
     // MAGIC_BREAK;
 

@@ -47,6 +47,7 @@ struct thr_stk_t {
     void* exit_status;  /* the exit status when thr_exit called */
     mutex_t mp;         /* mutex */
     cond_t cv;          /* conditional variable */
+    int join;           /* indicate if this thread is called thr_join */
     int zero;           /* the value indicates the begining of stack */
 };
 
