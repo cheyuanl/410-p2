@@ -44,25 +44,33 @@ cond_t fork_cv;
 /** @brief lock make sure thr_create is sequential */
 mutex_t create_mp;
 
+/** @brief lock to sync thread linked-list operation */
+mutex_t thr_stk_list_mp;
+
 
 /* --- linked-list utility ---- */
 
 /** @brief serach for utid in thread list */
 thr_stk_t *thr_find(int utid) {
+    mutex_lock(&thr_stk_list_mp);
     thr_stk_t *curr_thr_stk = head;
     while (curr_thr_stk != NULL) {
         if (curr_thr_stk->utid == utid) {
+            mutex_unlock(&thr_stk_list_mp);
             return curr_thr_stk;
         }
         curr_thr_stk = curr_thr_stk->next;
     }
+    mutex_unlock(&thr_stk_list_mp);
     return NULL;
 }
 
 /** @brief insert utid into thread list */
 int thr_insert(thr_stk_t *thr_stk) {
+    mutex_lock(&thr_stk_list_mp);
     /* check validity */
     if (thr_stk == NULL) {
+        mutex_unlock(&thr_stk_list_mp);
         return -1;
     }
 
@@ -81,19 +89,23 @@ int thr_insert(thr_stk_t *thr_stk) {
             thr_stk->next->prev = thr_stk;
         }
     }
+    mutex_unlock(&thr_stk_list_mp);
     return 0;
 }
 
 /** @brief delete utid from thread list */
 int thr_remove(thr_stk_t *thr_stk) {
+    mutex_lock(&thr_stk_list_mp);
     /* utid is not found */
     if (thr_stk == NULL) {
+        mutex_unlock(&thr_stk_list_mp);
         return -1;
     }
 
     /* utid is the only element */
     if (thr_stk == head) {
         head = NULL;
+        mutex_unlock(&thr_stk_list_mp);
         return 0;
     }
 
@@ -109,7 +121,7 @@ int thr_remove(thr_stk_t *thr_stk) {
             thr_stk->next->prev = thr_stk->prev;
         }
     }
-
+    mutex_unlock(&thr_stk_list_mp);
     return 0;
 }
 
@@ -212,7 +224,7 @@ int thr_yield(int tid) {
         else if (thr_stk->state != THR_RUNNABLE) {
             lprintf("The utid %d is not runnable. \n", tid);
             return -1;
-        } 
+        }
 */
         else {
 #ifdef MY_DEBUG
@@ -256,7 +268,7 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     thr_stk->prev = NULL;
     thr_stk->utid = global_utid;
     /* Initialize kernel assigned ID as 0 */
-    thr_stk->ktid = 0;     
+    thr_stk->ktid = 0;
     thr_stk->state = THR_UNAVAILABLE;
     thr_stk->zero = 0;
 
@@ -329,6 +341,10 @@ int thr_init(unsigned int size) {
     /* Initialize the main thread's private lock and cv */
     mutex_init(&main_thr_stk.mp);
     cond_init(&main_thr_stk.cv);
+
+    /* Initialize the mutex for thread-list */
+    mutex_init(&thr_stk_list_mp);
+
     // MAGIC_BREAK;
 
     /* add main thread to thread list */
