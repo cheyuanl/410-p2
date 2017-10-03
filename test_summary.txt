@@ -1,7 +1,7 @@
 Status of test: Not test yet. Not passed yet. 
                 Passed(unsuitable for misbehave). 
                 Passed all misbehave. 
-
+The tests are listed in README are labled as "In P2 README"
 
 
 actual_wait: Syscall, covers wait vanish fork yield set_status
@@ -10,9 +10,11 @@ actual_wait: Syscall, covers wait vanish fork yield set_status
 
 agility_drill: mutex_lock and release. Require full thr_lib.
                Not test yet.
+               In P2 README
 
 beady_test: Simple game for testing the thread lib. Require full thr_lib
             Not test yet.
+            In P2 README
 
 bg: Not for p2. Syscall, covers fork exec. 
     Passed. Usage: bg getpid_test1.
@@ -29,7 +31,8 @@ cvar_test: Condition variables. Require full thr_lib.
 
 cyclone: Basic thread behaviors with misbehaviors. Covers thr_create, 
          thr_join, thr_exit. 
-         Not test yet.
+         Passed all misbehave.
+         In P2 README
 
 excellent: A multi-threaded application which sometimes experiences
            a thread crash.
@@ -47,6 +50,7 @@ join_specific_test: Simple thread_lib test. This test spawns several
                     threads and joins on some of them specifically. 
                     Others are joined on in a more general fashion.
                     Not test yet.
+                    In P2 README
 
 juggle: A tester in which threads juggle thread juggle threads.
         Not test yet.
@@ -57,6 +61,7 @@ largetest: Creates succesfully larger waves of threads until something
 
 mandelbrot: Complicated test for thr_lib. Require everything.
             Not test yet.
+            In P2 README
 
 multitest: Run multiple tests in one program.
            Not test yet.
@@ -71,7 +76,7 @@ nibbles: Syscall. Test console related syscall.
 
 paraguay: Condition variables. cond_wait, cond_signal. Require thr_yield.          
           Do not need thr_join. 
-          Not test yet.
+          Passed all misbehave.
 
 racer: Intensive test of Mutex, condition variable and semaphores.
        Not test yet.
@@ -87,7 +92,7 @@ switzerland: Test whether the auto-stack survives thr_init()
              Not test yet.
 
 thr_exit_join: Simple test for thread_join and exit. 
-               Not test yet.
+               Passed all misbehave.
 
 wild_test1: Tests program death by unnatural causes. 
             Passed. Will trigger the Page fault and dump the reg values. 

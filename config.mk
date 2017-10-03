@@ -86,7 +86,7 @@ UPDATE_METHOD = afs
 # directory
 #
 410TESTS = misbehave_wrap startle actual_wait thr_exit_join\
-           mutex_destroy_test
+           mutex_destroy_test paraguay cyclone
 
 ###########################################################################
 # Test programs you have written which you wish to run

@@ -8,7 +8,7 @@
 #include <thr_internals.h>
 #include <thread.h>
 
-#define MY_DEBUG
+#define MY_DEBUGx
 
 #ifndef PAGE_ALIGN_MASK
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
@@ -34,6 +34,16 @@ thr_stk_t main_thr_stk;
 
 /** @brief Record the kernel tid of main(legacy) thread */
 int main_thr_ktid;
+
+/** @brief lock to sync thr_create and the newly created child thread */
+mutex_t fork_mp;
+
+/** @brief CV to sync thr_create and the newly created child thread  */
+cond_t fork_cv;
+
+/** @brief lock make sure thr_create is sequential */
+mutex_t create_mp;
+
 
 /* --- linked-list utility ---- */
 
@@ -160,8 +170,13 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
 #endif
     thr_stk_t *thr_stk = get_thr_stk();
 
+    /* wait until the ktid field is set by the creation thread */
+    mutex_lock(&fork_mp);
+    while(thr_stk->ktid == 0) /* initial value is 0 */
+        cond_wait(&fork_cv, &fork_mp);
+    mutex_unlock(&fork_mp);
+
     /** begin critical section? **/
-    thr_stk->state = THR_RUNNABLE;
     void *ret_val = func(args);
 /** end   critical section? **/
 
@@ -193,10 +208,13 @@ int thr_yield(int tid) {
             return -1;
         }
         /* The specified thread is not runnable. */
+/*
         else if (thr_stk->state != THR_RUNNABLE) {
             lprintf("The utid %d is not runnable. \n", tid);
             return -1;
-        } else {
+        } 
+*/
+        else {
 #ifdef MY_DEBUG
             lprintf("thr->utid = %d, thr->ktid = %d \n", thr_stk->utid,
                     thr_stk->ktid);
@@ -237,6 +255,8 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     thr_stk->next = NULL;
     thr_stk->prev = NULL;
     thr_stk->utid = global_utid;
+    /* Initialize kernel assigned ID as 0 */
+    thr_stk->ktid = 0;     
     thr_stk->state = THR_UNAVAILABLE;
     thr_stk->zero = 0;
 
@@ -294,6 +314,19 @@ int thr_init(unsigned int size) {
     /* Initialize the malloc lock. Malloc family would not be called
      * before thr_init. */
     mutex_init(&malloc_mp);
+
+    /* The whole process of thr_create should be serial, we do not
+     * want any part of it to be interleaved with another thr_create,
+     * since thr_create involves so many global operations */
+    mutex_init(&create_mp);
+
+    /* Initialize the lock and cv for thr_create. Let's say T1 creates
+     * T2. After thr_create, T2 has to wait until its ktid is installed
+     * by T1.  */
+    mutex_init(&fork_mp);
+    cond_init(&fork_cv);
+
+    /* Initialize the main thread's private lock and cv */
     mutex_init(&main_thr_stk.mp);
     cond_init(&main_thr_stk.cv);
     // MAGIC_BREAK;
@@ -315,6 +348,7 @@ int thr_create(void *(*func)(void *), void *args) {
 #ifdef MY_DEBUG
     lprintf("Allocating space for thread stack");
 #endif
+    mutex_lock(&create_mp);
     void *thr_stk_lo = stk_alloc(thr_stk_curr, stk_size);
 #ifdef MY_DEBUG
     lprintf("stk_alloc: %p", thr_stk_lo);
@@ -347,7 +381,11 @@ int thr_create(void *(*func)(void *), void *args) {
 
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
     /* Store the ktid back to the newly created thread */
+    mutex_lock(&fork_mp);
     thr_stk->ktid = ret;
+    cond_signal(&fork_cv);
+    mutex_unlock(&fork_mp);
+
 #ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
 #endif
@@ -370,7 +408,10 @@ int thr_create(void *(*func)(void *), void *args) {
         return -1;
     }
 
-    return global_utid++;
+    int ret_utid = global_utid++;
+    mutex_unlock(&create_mp);
+
+    return ret_utid;
 }
 
 /** TODO: this function call is quiet inefficient */
