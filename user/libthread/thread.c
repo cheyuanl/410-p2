@@ -181,7 +181,8 @@ int thr_join(int tid, void **statusp) {
     }
 
     /* st status */
-    *statusp = thr_stk->exit_status;
+    if(statusp != NULL)
+        *statusp = thr_stk->exit_status;
 
     mutex_unlock(&thr_stk->mp);
 

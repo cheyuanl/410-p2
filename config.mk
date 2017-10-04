@@ -86,7 +86,10 @@ UPDATE_METHOD = afs
 # directory
 #
 410TESTS = misbehave_wrap startle actual_wait thr_exit_join\
-           mutex_destroy_test paraguay cyclone agility_drill
+           mutex_destroy_test paraguay cyclone agility_drill\
+           join_specific_test beady_test mandelbrot\
+           cvar_test excellent juggle largetest multitest\
+           switzerland
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -94,7 +97,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_thr_mngmnt test_mutex test_malloc test_thr_yield
+STUDENTTESTS = test_thr_mngmnt test_mutex test_malloc test_thr_yield\
+               our_cvar_test our_thr_exit_join
 
 ###########################################################################
 # Object files for your thread library

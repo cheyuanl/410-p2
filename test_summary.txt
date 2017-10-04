@@ -9,11 +9,11 @@ actual_wait: Syscall, covers wait vanish fork yield set_status
              auto stack growth.
 
 agility_drill: mutex_lock and release. Require full thr_lib.
-               Not test yet.
+               passed all misbehave.
                In P2 README
 
 beady_test: Simple game for testing the thread lib. Require full thr_lib
-            Not test yet.
+            Passed.
             In P2 README
 
 bg: Not for p2. Syscall, covers fork exec. 
@@ -27,7 +27,7 @@ cat: Syscall, cover readfile print.
      in the config.mk, and copied to the files directory.
 
 cvar_test: Condition variables. Require full thr_lib.
-           Not test yet.
+           Passed all misbehave.
 
 cyclone: Basic thread behaviors with misbehaviors. Covers thr_create, 
          thr_join, thr_exit. 
@@ -49,7 +49,7 @@ idle, init, shell: Basic program for shell.
 join_specific_test: Simple thread_lib test. This test spawns several 
                     threads and joins on some of them specifically. 
                     Others are joined on in a more general fashion.
-                    Not test yet.
+                    Passed all misbehave.
                     In P2 README
 
 juggle: A tester in which threads juggle thread juggle threads.
@@ -60,7 +60,7 @@ largetest: Creates succesfully larger waves of threads until something
            Not test yet.
 
 mandelbrot: Complicated test for thr_lib. Require everything.
-            Not test yet.
+            Passed.
             In P2 README
 
 multitest: Run multiple tests in one program.
@@ -84,6 +84,9 @@ racer: Intensive test of Mutex, condition variable and semaphores.
 rwlock_downgrade_read_test: test readers vs downgrading writers 
                             for rwlock.
                             Not test yet.
+
+stack_test1: test auto-stack pages.
+             Not test yet.
 
 startle: simple test of thread creation.
          Passed all misbehave.
