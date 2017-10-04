@@ -13,6 +13,7 @@
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
+void *thr_stk_start;
 
 /** @brief The head of thread stack */
 void *thr_stk_head;
@@ -65,12 +66,5 @@ int thr_create_asm(void *ebp, void *esp);
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
-
-thr_stk_t *thr_find(int utid);
-
-int thr_insert(thr_stk_t *thr_stk);
-
-int thr_remove(thr_stk_t * utid);
-
 
 #endif /* THR_INTERNALS_H */

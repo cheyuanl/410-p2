@@ -1,75 +1,119 @@
+/** @file thread.c
+ *  @brief The thread library.
+ *
+ *  This contains the variables, data structure methods,
+ *  and implementation of API for libthread.
+ *
+ *  @author Che-Yuan Liang (cheyuanl)
+ *  @bug No known bugs.
+ */
+
 #include <assert.h>
 #include <cond.h>
 #include <mutex.h>
-#include <simics.h>
-#include <stdlib.h>
-#include <string.h>
+#include <simics.h> /* lprintf() */
+#include <string.h> /* memset() */
 #include <syscall.h>
 #include <thr_internals.h>
 #include <thread.h>
 
 #define MY_DEBUGx
 
-#ifndef PAGE_ALIGN_MASK
+/** @brief Round down the bits to page size */
 #define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
-#endif
-
+/** @brief Round up the bits to page size */
 #define PAGE_ROUNDUP(p) \
     (void *)(PAGE_ALIGN_MASK & (((unsigned int)p) + PAGE_SIZE - 1))
+/** @brief Round down an address to page size and cast it to pointer type */ 
 #define PAGE_ROUNDDN(p) (void *)(PAGE_ALIGN_MASK & ((unsigned int)p))
+/** @brief Define NULL */
+#define NULL 0
 
-/* --- Define private fields for libthread --- */
+/* -- Private defintions -- */
 
 /** @brief The next utid to be issued */
 static int global_utid = 0;
 
-/** @brief The size of a thread stack */
+/** @brief The size of a thread stack 
+ * 
+ * This variable should be set once thr_init is called. The value should 
+ * be multiple of PAGE_SIZE.
+ */
+
 static int stk_size;
 
-/** @brief The head of linked-list */
+/** @brief The head of linked-list pointing to threads being created. */
 static thr_stk_t *head = NULL;
 
-/** @brief The thread stack for main(legacy) thread */
-thr_stk_t main_thr_stk;
-
-/** @brief Record the kernel tid of main(legacy) thread */
-int main_thr_ktid;
-
-/** @brief lock to sync thr_create and the newly created child thread */
-mutex_t fork_mp;
+/** @brief Lock to sync thr_create and the newly created child thread */
+static mutex_t fork_mp;
 
 /** @brief CV to sync thr_create and the newly created child thread  */
-cond_t fork_cv;
+static cond_t fork_cv;
 
-/** @brief lock make sure thr_create is sequential */
-mutex_t create_mp;
+/** @brief Lock to make sure thr_create is sequential */
+static mutex_t create_mp;
 
-/** @brief lock to sync thread linked-list operation */
-mutex_t thr_stk_list_mp;
+/** @brief Lock to sync thread linked-list operation */
+static mutex_t thr_stk_list_mp;
 
-/** @breif lock for join operation */
-mutex_t join_mp;
+/** @breif Lock for join operation */
+static mutex_t join_mp;
+
+/** @brief The thread stack for main(legacy) thread 
+ * 
+ *  In our thread library, we assume each thread has a header structure, 
+ *  thr_stk_t in order to manage the threads. Since the legacy programs 
+ *  don't have this header, we reserve this field for the main thread, 
+ *  making it compatible to the our thread management data structure.
+ *  
+ */
+thr_stk_t main_thr_stk;
+
+/** @brief Record the kernel tid of main(legacy) thread 
+ *  
+ *  This variable should be set when thr_init is called.
+ *  The purpose is to retrieve the main_thr_stk differently than what we do for
+ *  normal thread's thr_stk_t. 
+ *  The underlying assumption is that thr_init will only be called once by 
+ *  the main thread.
+*/
+int main_thr_ktid;
 
 
-/* --- linked-list utility ---- */
+/* -- utility for linked list -- */
 
-/** @brief serach for utid in thread list */
-thr_stk_t *thr_find(int utid) {
+/** @brief Serach for utid in thread list. 
+ * 
+ *  This search if the utid is created and yet been destroyed.
+ * 
+ *  @param utid The user thread id.
+ *  @return The address of utid's header struct. If not found, return NULL. 
+ */
+static thr_stk_t *thr_find(int utid) {
+    /* Begin critical section */
     mutex_lock(&thr_stk_list_mp);
+
+    /* Start traversal from the head */
     thr_stk_t *curr_thr_stk = head;
     while (curr_thr_stk != NULL) {
+        /* Found utid */
         if (curr_thr_stk->utid == utid) {
+            /* End critical section */
             mutex_unlock(&thr_stk_list_mp);
             return curr_thr_stk;
         }
         curr_thr_stk = curr_thr_stk->next;
     }
+
+    /* End critical section */
     mutex_unlock(&thr_stk_list_mp);
+    /* utid is not found */
     return NULL;
 }
 
 /** @brief insert utid into thread list */
-int thr_insert(thr_stk_t *thr_stk) {
+static int thr_insert(thr_stk_t *thr_stk) {
     mutex_lock(&thr_stk_list_mp);
     /* check validity */
     if (thr_stk == NULL) {
@@ -97,7 +141,7 @@ int thr_insert(thr_stk_t *thr_stk) {
 }
 
 /** @brief delete utid from thread list */
-int thr_remove(thr_stk_t *thr_stk) {
+static int thr_remove(thr_stk_t *thr_stk) {
     mutex_lock(&thr_stk_list_mp);
     /* utid is not found */
     if (thr_stk == NULL) {
@@ -156,7 +200,6 @@ void *stk_alloc(void *hi, int nbyte) {
 }
 
 int thr_join(int tid, void **statusp) {
-
     mutex_lock(&join_mp);
 
     /* check if tid is currently in running */
@@ -175,20 +218,18 @@ int thr_join(int tid, void **statusp) {
 
     if (thr_stk->join) {
         return -1;
-    }
-    else {
+    } else {
         thr_stk->join = 1;
     }
 
     /* st status */
-    if(statusp != NULL)
-        *statusp = thr_stk->exit_status;
+    if (statusp != NULL) *statusp = thr_stk->exit_status;
 
     mutex_unlock(&thr_stk->mp);
 
     /* clean up */
     /* TOOD: better error handling, haven't think through */
-    if (thr_remove(thr_stk) != 0){
+    if (thr_remove(thr_stk) != 0) {
         return -1;
     }
     if (remove_stk_frame(thr_stk) != 0) {
@@ -207,7 +248,7 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
 
     /* wait until the ktid field is set by the creation thread */
     mutex_lock(&fork_mp);
-    while(thr_stk->ktid == 0) /* initial value is 0 */
+    while (thr_stk->ktid == 0) /* initial value is 0 */
         cond_wait(&fork_cv, &fork_mp);
     mutex_unlock(&fork_mp);
 
@@ -243,12 +284,12 @@ int thr_yield(int tid) {
             return -1;
         }
         /* The specified thread is not runnable. */
-/*
-        else if (thr_stk->state != THR_RUNNABLE) {
-            lprintf("The utid %d is not runnable. \n", tid);
-            return -1;
-        }
-*/
+        /*
+                else if (thr_stk->state != THR_RUNNABLE) {
+                    lprintf("The utid %d is not runnable. \n", tid);
+                    return -1;
+                }
+        */
         else {
 #ifdef MY_DEBUG
             lprintf("thr->utid = %d, thr->ktid = %d \n", thr_stk->utid,
@@ -345,7 +386,6 @@ int thr_init(unsigned int size) {
     main_thr_stk.ktid = gettid();
     main_thr_ktid = main_thr_stk.ktid;
     main_thr_stk.state = THR_UNAVAILABLE;
-
 
     /* Initialize the malloc lock. Malloc family would not be called
      * before thr_init. */
