@@ -28,6 +28,8 @@
 #define PAGE_ROUNDDN(p) (void *)(PAGE_ALIGN_MASK & ((unsigned int)p))
 /** @brief Define NULL */
 #define NULL 0
+/** @brief Define esp align */
+#define ESP_ALIGN 4
 
 /* -- Private defintions -- */
 
@@ -132,8 +134,8 @@ static int thr_insert(thr_stk_t *thr_stk) {
         return -1;
     }
 
-    /* the thread should be set up at this point */
-    assert(thr_stk->state != THR_UNAVAILABLE);
+    /* the thread should still in THR_UNRUNNABLE state */
+    assert(thr_stk->state == THR_UNRUNNABLE);
 
     /* no threads in the list */
     if (head == NULL) {
@@ -323,7 +325,7 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
     /* wait until the ktid field is set by the creation thread */
     mutex_lock(&fork_mp);
     /* initial value is 0 */
-    while (thr_stk->ktid == 0) {
+    while (thr_stk->state != THR_RUNNABLE) {
         cond_wait(&fork_cv, &fork_mp);
     }
     mutex_unlock(&fork_mp);
@@ -418,8 +420,8 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     thr_stk_t *thr_stk = hi - sizeof(thr_stk_t);
 
     /* fill in header from low addr to high addr */
-    /* note: esp should be aligned to 4 */
-    assert((int)thr_stk->ret_addr % 4 == 0);
+    /* assert esp to be aligned to 4 byte */
+    assert((int)thr_stk->ret_addr % ESP_ALIGN == 0);
     thr_stk->ret_addr = vanish;
     thr_stk->func = func;
     thr_stk->args = args;
@@ -430,7 +432,7 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     /* Initialize kernel assigned ID as 0 */
     thr_stk->ktid = 0;
     /* The thread shuoldn't be used before this state is cleared */
-    thr_stk->state = THR_UNAVAILABLE;
+    thr_stk->state = THR_UNRUNNABLE;
     thr_stk->zero = 0;
     thr_stk->join_flag = 0;
 
@@ -479,11 +481,18 @@ int thr_init(unsigned int size) {
 #ifdef MY_DEBUG
     lprintf("initializing main_thr_stk");
 #endif
+    /* Initialize main thread's stack header */
     memset(&main_thr_stk, 0, sizeof(thr_stk_t));
     main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
     main_thr_stk.ktid = gettid();
+    main_thr_stk.state = THR_UNRUNNABLE;
+
+    /* record the ktid of main thread */
     main_thr_ktid = main_thr_stk.ktid;
-    main_thr_stk.state = THR_UNAVAILABLE;
+
+    /* Initialize main thread's private lock and cv */
+    mutex_init(&main_thr_stk.mp);
+    cond_init(&main_thr_stk.cv);
 
     /* Initialize the malloc lock. Malloc family would not be called
      * before thr_init. */
@@ -496,21 +505,15 @@ int thr_init(unsigned int size) {
 
     /* Initialize the lock and cv for thr_create. Let's say T1 creates
      * T2. After thr_create, T2 has to wait until its ktid is installed
-     * by T1.  */
+     * by T1. */
     mutex_init(&fork_mp);
     cond_init(&fork_cv);
-
-    /* Initialize the main thread's private lock and cv */
-    mutex_init(&main_thr_stk.mp);
-    cond_init(&main_thr_stk.cv);
 
     /* Initialize the mutex for thread-list */
     mutex_init(&thr_stk_list_mp);
 
     /* Initialize the mutex for thr_join */
     mutex_init(&join_mp);
-
-    // MAGIC_BREAK;
 
     /* add main thread to thread list */
     if (thr_insert(&main_thr_stk) < 0) {
@@ -520,50 +523,62 @@ int thr_init(unsigned int size) {
     return 0;
 }
 
-int thr_create(void *(*func)(void *), void *args) {
-/* request a memory block starting from where ? */
-/* TODO: currently the thread stack lives on heap,
- *       since I don't konw how to find a chunck of
- *       memory on stack...
+/** @brief Create a new thread.
+ *
+ *  This will spawn a new thread, and keep track of the new thread
+ *  before it is joined and cleaned.
+ *
+ *  @param func The function to run.
+ *  @param args The arguments of the function.
  */
+int thr_create(void *(*func)(void *), void *args) {
+    /* lock thr_create */
+    mutex_lock(&create_mp);
+
+    /* allocate the thread stack header and stack for the thread */
+    void *thr_stk_lo = stk_alloc(thr_stk_curr, stk_size);
+
 #ifdef MY_DEBUG
     lprintf("Allocating space for thread stack");
-#endif
-    mutex_lock(&create_mp);
-    void *thr_stk_lo = stk_alloc(thr_stk_curr, stk_size);
-#ifdef MY_DEBUG
     lprintf("stk_alloc: %p", thr_stk_lo);
 #endif
+
+    /* allocation failed */
     if (thr_stk_lo == NULL) {
         return -1;
     }
 
-    /* move thr_stk_curr down */
+    /* substract thr_stk_curr one stk_size down */
     thr_stk_curr -= stk_size;
 
+    /* install the header structure for child thread stack */
     thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, (void *)func);
 
-/* NOTE: a thread newly created by thread fork has no software exception
- *       handler registered */
-/* NOTE: at this point, child shouldn't alter the stack... or parent
- * should
- * do
- *       nothing, since the stack is corrupted from parents point of
- * view.
- */
 #ifdef MY_DEBUG
+    /* NOTE: a thread newly created by thread fork has no software exception
+     *       handler registered */
     lprintf("thr_stk addr %p", thr_stk);
     lprintf("ebp addr %p", &thr_stk->zero);
     lprintf("esp addr %p", &thr_stk->ret_addr);
     lprintf("func addr %p", func);
     lprintf("ret_addr %p", thr_stk->ret_addr);
 #endif
-    //    MAGIC_BREAK;
 
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
-    /* Store the ktid back to the newly created thread */
+
+    /* Store the ktid back to the newly created thread, and
+     * insert this thread to the list. We need to ensure this is properly
+     * done before the thread start to run */ 
     mutex_lock(&fork_mp);
+
+    if (thr_insert(thr_stk) < 0) {
+        mutex_unlock(&fork_mp);
+        return -1;
+    }
+
     thr_stk->ktid = ret;
+    thr_stk->state = THR_RUNNABLE;
+
     cond_signal(&fork_cv);
     mutex_unlock(&fork_mp);
 
@@ -571,9 +586,7 @@ int thr_create(void *(*func)(void *), void *args) {
     lprintf("thr_create_asm return: %p", (void *)ret);
 #endif
 
-    //    MAGIC_BREAK;
-
-    /* error. no thread created */;
+    /* error. no thread was created */;
     if (ret == -1) {
         if (_remove_stk_frame(thr_stk) < 0) {
             lprintf("warning! remove stk frame failed");
@@ -581,13 +594,13 @@ int thr_create(void *(*func)(void *), void *args) {
         return -1;
     }
 
+
+
 #ifdef MY_DEBUG
     lprintf("Hello from parent");
 #endif
 
-    if (thr_insert(thr_stk) < 0) {
-        return -1;
-    }
+
 
     int ret_utid = global_utid++;
     mutex_unlock(&create_mp);
@@ -595,9 +608,17 @@ int thr_create(void *(*func)(void *), void *args) {
     return ret_utid;
 }
 
-/** TODO: this function call is quiet inefficient */
+/** @brief Get the address of the thread stack header 
+ *  
+ *  Backtrack the ebp until it reach a special value (0).
+ * 
+ *  @return The address of stack's header structure.
+ *  @note This function use ebp == 0 to as the terminate condition
+ *        for ebp traversal. Since in a normal stack calling convention,
+ *        the ebp shouldn't be zero.
+ */
 thr_stk_t *get_thr_stk() {
-    /* quick hack */
+
     if (gettid() == main_thr_ktid) {
         return &main_thr_stk;
     }
