@@ -13,7 +13,6 @@
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
-void *thr_stk_start;
 
 /** @brief The head of thread stack */
 void *thr_stk_head;
@@ -27,7 +26,6 @@ mutex_t malloc_mp;
 /** @brief The state of thread */
 typedef enum thr_state {
     THR_UNAVAILABLE,
-    THR_RUNNABLE,
     THR_SLEEPING,
     THR_EXITED
 
@@ -48,7 +46,7 @@ struct thr_stk_t {
     void* exit_status;  /* the exit status when thr_exit called */
     mutex_t mp;         /* mutex */
     cond_t cv;          /* conditional variable */
-    int join;           /* indicate if this thread is called thr_join */
+    int join_flag;      /* indicate if this thread is called thr_join */
     int zero;           /* the value indicates the begining of stack */
 };
 
@@ -58,11 +56,7 @@ void *get_ebp();
 
 int get_eax();
 
-/** @brief Allocate chunck of memory from (hi-size) to hi */
-void *stk_alloc(void *hi, int nbyte);
 
-/** @brief Perform thread fork and move chlld thread to the new stack */
-int thr_create_asm(void *ebp, void *esp);
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
