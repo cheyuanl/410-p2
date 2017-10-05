@@ -566,6 +566,15 @@ int thr_create(void *(*func)(void *), void *args) {
 
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
 
+    /* error. no thread was created */;
+    if (ret == -1) {
+        if (_remove_stk_frame(thr_stk) < 0) {
+            lprintf("warning! remove stk frame failed");
+        }
+        mutex_unlock(&create_mp);
+        return -1;
+    }
+
     /* Store the ktid back to the newly created thread, and
      * insert this thread to the list. We need to ensure this is properly
      * done before the thread start to run */ 
@@ -578,21 +587,15 @@ int thr_create(void *(*func)(void *), void *args) {
 
     thr_stk->ktid = ret;
     thr_stk->state = THR_RUNNABLE;
-
+    /* now the child can run */
     cond_signal(&fork_cv);
+
     mutex_unlock(&fork_mp);
 
 #ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
 #endif
 
-    /* error. no thread was created */;
-    if (ret == -1) {
-        if (_remove_stk_frame(thr_stk) < 0) {
-            lprintf("warning! remove stk frame failed");
-        }
-        return -1;
-    }
 
 
 
