@@ -203,6 +203,11 @@ static int thr_remove(thr_stk_t *thr_stk) {
 
 /* -- Definitions -- */
 
+/** @breif ebp getter
+ *  @return the value stored in ebp register
+ */
+void *get_ebp();
+
 /** @brief Perform thread fork, move chlld thread to the new stack
  *         and jmp eip
  *
@@ -261,7 +266,6 @@ static int _remove_stk_frame(thr_stk_t *thr_stk) {
  *  @param statusp The pointer to the pointer of status struct.
  *  @return 0 if the target thread exited, else return -1.
 */
-
 int thr_join(int tid, void **statusp) {
     /* ===lock the join operation */
     mutex_lock(&join_mp);
@@ -414,7 +418,6 @@ void thr_exit(void *status) {
  *  @param args The address of arguments.
  *  @param funct The address of function.
 */
-
 thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     void *hi = thr_stk_lo + stk_size;
     thr_stk_t *thr_stk = hi - sizeof(thr_stk_t);
@@ -453,7 +456,7 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
  *
  *  @assumption Only "main" thread will call this function once.
  *  @param size The requested stack size.
- *  @note: We will round up the requested size, so internally there will be less
+ *  @note  We round up the requested size, so internally there will be less
  *         exterenal fragmentation on the stack.
  *  @return -1 if fail, 0 if success.s
  */
@@ -576,17 +579,20 @@ int thr_create(void *(*func)(void *), void *args) {
     }
 
     /* Store the ktid back to the newly created thread, and
-     * insert this thread to the list. We need to ensure this is properly
-     * done before the thread start to run */ 
+     * insert this thread to the list. We need to ensure these are
+     * done before the thread start to run */
     mutex_lock(&fork_mp);
 
+    /* insert to thead list */
     if (thr_insert(thr_stk) < 0) {
         mutex_unlock(&fork_mp);
         return -1;
     }
 
+    /* setup the final piece of info before child can run */
     thr_stk->ktid = ret;
     thr_stk->state = THR_RUNNABLE;
+
     /* now the child can run */
     cond_signal(&fork_cv);
 
@@ -594,16 +600,8 @@ int thr_create(void *(*func)(void *), void *args) {
 
 #ifdef MY_DEBUG
     lprintf("thr_create_asm return: %p", (void *)ret);
-#endif
-
-
-
-
-#ifdef MY_DEBUG
     lprintf("Hello from parent");
 #endif
-
-
 
     int ret_utid = global_utid++;
     mutex_unlock(&create_mp);
@@ -611,17 +609,16 @@ int thr_create(void *(*func)(void *), void *args) {
     return ret_utid;
 }
 
-/** @brief Get the address of the thread stack header 
- *  
+/** @brief Get the address of the thread stack header
+ *
  *  Backtrack the ebp until it reach a special value (0).
- * 
+ *
  *  @return The address of stack's header structure.
- *  @note This function use ebp == 0 to as the terminate condition
- *        for ebp traversal. Since in a normal stack calling convention,
- *        the ebp shouldn't be zero.
+ *  @note   This function use ebp == 0 to as the terminate condition
+ *          during stack backtrace. In a normal stack calling convention,
+ *          the ebp shouldn't be zero, so this should be a reasonable value.
  */
 thr_stk_t *get_thr_stk() {
-
     if (gettid() == main_thr_ktid) {
         return &main_thr_stk;
     }
@@ -639,15 +636,17 @@ thr_stk_t *get_thr_stk() {
     return (thr_stk_t *)curr_ebp;
 }
 
+/** @brief Get this thread's utid
+ *  @return my_utid Caller's utid.
+ */
 int thr_getid() {
-    /* quick hack */
+    /* main thread is special case */
     if (gettid() == main_thr_ktid) {
         return main_thr_stk.utid;
     }
 
     thr_stk_t *thr_stk = get_thr_stk();
-    int my_utid = thr_stk->utid;
-    // lprintf("utid = %d", my_utid);
+    int utid = thr_stk->utid;
 
-    return my_utid;
+    return utid;
 }

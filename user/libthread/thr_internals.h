@@ -7,8 +7,8 @@
 #ifndef THR_INTERNALS_H
 #define THR_INTERNALS_H
 
-#include <mutex_type.h>
 #include <cond_type.h>
+#include <mutex_type.h>
 
 /** @brief The bounds of main thread's stack */
 void *main_stk_lo;
@@ -39,7 +39,7 @@ typedef enum thr_state {
 /** @brief The structure of the head block of thread stack */
 typedef struct thr_stk_t thr_stk_t;
 struct thr_stk_t {
-    void *ret_addr;     /* the return addr for wrapper function, 
+    void *ret_addr;     /* the return addr for wrapper function,
                            this should be invalid since it won't be called */
     void *func;         /* child thread's wrapper function */
     void *args;         /* args for the child function */
@@ -49,16 +49,15 @@ struct thr_stk_t {
     int utid;           /* user thread id */
     int ktid;           /* kernel thread id */
     thr_state_t state;  /* state of this thread */
-    void* exit_status;  /* exit status place holder when thr_exit called */
+    void *exit_status;  /* exit status place holder when thr_exit called */
     mutex_t mp;         /* mutex for this structure */
     cond_t cv;          /* conditional variable for this structure */
     int join_flag;      /* indicate if this thread is called by thr_join */
     int zero;           /* the value indicates the ebp of begin of stack */
 };
 
+/** @brief xchg instruction wrapper */
 int xchg_wrapper(int *lock_available, int val);
-
-void *get_ebp();
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
