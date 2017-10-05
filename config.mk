@@ -97,14 +97,13 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_thr_mngmnt test_mutex test_malloc test_thr_yield\
-               our_cvar_test our_thr_exit_join
+STUDENTTESTS = test_mutex test_malloc test_thr_yield
 
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
 THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
-              thread.o thread_fork.o thr_create_asm.o get_ebp.o get_eax.o
+              thread.o thread_fork.o thr_create_asm.o get_ebp.o
 
 # Thread Group Library Support.
 #
