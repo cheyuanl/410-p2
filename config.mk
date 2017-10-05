@@ -89,7 +89,7 @@ UPDATE_METHOD = afs
            mutex_destroy_test paraguay cyclone agility_drill\
            join_specific_test beady_test mandelbrot\
            cvar_test excellent juggle largetest multitest\
-           switzerland
+           switzerland racer
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -103,7 +103,8 @@ STUDENTTESTS = test_mutex test_malloc test_thr_yield
 # Object files for your thread library
 ###########################################################################
 THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
-              thread.o thread_fork.o thr_create_asm.o get_ebp.o
+              thread.o thread_fork.o thr_create_asm.o get_ebp.o\
+			  sem.o
 
 # Thread Group Library Support.
 #
