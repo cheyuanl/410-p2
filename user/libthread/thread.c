@@ -16,18 +16,12 @@
 #include <syscall.h>
 #include <thr_internals.h>
 #include <thread.h>
+#include <stddef.h>
 
 #define MY_DEBUGx
 
-/** @brief Round down the bits to page size */
-#define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
-/** @brief Round up the bits to page size */
-#define PAGE_ROUNDUP(p) \
-    (void *)(PAGE_ALIGN_MASK & (((unsigned int)p) + PAGE_SIZE - 1))
-/** @brief Round down an address to page size and cast it to pointer type */
-#define PAGE_ROUNDDN(p) (void *)(PAGE_ALIGN_MASK & ((unsigned int)p))
 /** @brief Define NULL */
-#define NULL 0
+//#define NULL 0
 /** @brief Define esp align */
 #define ESP_ALIGN 4
 

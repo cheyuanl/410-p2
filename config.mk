@@ -89,7 +89,7 @@ UPDATE_METHOD = afs
            mutex_destroy_test paraguay cyclone agility_drill\
            join_specific_test beady_test mandelbrot\
            cvar_test excellent juggle largetest multitest\
-           switzerland racer
+           switzerland racer stack_test1
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -97,7 +97,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_mutex test_malloc test_thr_yield
+STUDENTTESTS = test_mutex test_malloc test_thr_yield our_actual_wait
 
 ###########################################################################
 # Object files for your thread library

@@ -10,7 +10,15 @@
 #include <cond_type.h>
 #include <mutex_type.h>
 
-/** @brief The bounds of main thread's stack */
+/** @brief Round down the bits to page size */
+#define PAGE_ALIGN_MASK ((unsigned int)~((unsigned int)(PAGE_SIZE - 1)))
+/** @brief Round up the bits to page size */
+#define PAGE_ROUNDUP(p) \
+    (void *)(PAGE_ALIGN_MASK & (((unsigned int)(p)) + PAGE_SIZE - 1))
+/** @brief Round down an address to page size and cast it to pointer type */
+#define PAGE_ROUNDDN(p) (void *)(PAGE_ALIGN_MASK & ((unsigned int)(p)))
+
+/** The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
 
