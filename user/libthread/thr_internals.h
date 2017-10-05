@@ -25,8 +25,13 @@ mutex_t malloc_mp;
 
 /** @brief The state of thread */
 typedef enum thr_state {
-    THR_UNAVAILABLE,
+    /* still installing the handler */
+    THR_UNRUNNABLE,
+    /* every thing is setup, good to go */
+    THR_RUNNABLE,
+    /* descheduled */
     THR_SLEEPING,
+    /* not running and vanished */
     THR_EXITED
 
 } thr_state_t;
@@ -34,29 +39,26 @@ typedef enum thr_state {
 /** @brief The structure of the head block of thread stack */
 typedef struct thr_stk_t thr_stk_t;
 struct thr_stk_t {
-    void *ret_addr;     /* the return addr for entry function */
-    void *func;         /* child function wrapper */
-    void *args;         /* args for the entry function */
-    thr_stk_t *cv_next; /* pointer to next conditional variable thread */
-    thr_stk_t *next;    /* pointer to next thread */
-    thr_stk_t *prev;    /* pointer to prev thread */
-    int utid;           /* the user thread id */
-    int ktid;           /* the kernel thread id */
-    thr_state_t state;  /* the state of this thread */
-    void* exit_status;  /* the exit status when thr_exit called */
-    mutex_t mp;         /* mutex */
-    cond_t cv;          /* conditional variable */
-    int join_flag;      /* indicate if this thread is called thr_join */
-    int zero;           /* the value indicates the begining of stack */
+    void *ret_addr;     /* the return addr for wrapper function, 
+                           this should be invalid since it won't be called */
+    void *func;         /* child thread's wrapper function */
+    void *args;         /* args for the child function */
+    thr_stk_t *cv_next; /* pointer to next thread in the cv chain */
+    thr_stk_t *next;    /* pointer to next thread in thread list */
+    thr_stk_t *prev;    /* pointer to prev thread in thread list */
+    int utid;           /* user thread id */
+    int ktid;           /* kernel thread id */
+    thr_state_t state;  /* state of this thread */
+    void* exit_status;  /* exit status place holder when thr_exit called */
+    mutex_t mp;         /* mutex for this structure */
+    cond_t cv;          /* conditional variable for this structure */
+    int join_flag;      /* indicate if this thread is called by thr_join */
+    int zero;           /* the value indicates the ebp of begin of stack */
 };
 
 int xchg_wrapper(int *lock_available, int val);
 
 void *get_ebp();
-
-int get_eax();
-
-
 
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
