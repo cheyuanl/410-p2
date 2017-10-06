@@ -12,16 +12,14 @@
 #include <cond.h>
 #include <mutex.h>
 #include <simics.h> /* lprintf() */
+#include <stddef.h> /* define NULL */
 #include <string.h> /* memset() */
 #include <syscall.h>
 #include <thr_internals.h>
 #include <thread.h>
-#include <stddef.h>
 
 #define MY_DEBUGx
 
-/** @brief Define NULL */
-//#define NULL 0
 /** @brief Define esp align */
 #define ESP_ALIGN 4
 
@@ -48,7 +46,12 @@ static int main_thr_ktid;
 static int stk_size;
 
 /** @brief The head of linked-list pointing to threads being created. */
-static thr_stk_t *head = NULL;
+static thr_stk_t *thr_created_head = NULL;
+
+/** @brief The head of the linked-list pointing to address being joined
+ *         and freed. This is used to recycle the pages after removed.
+ */
+// static thr_stk_t *thr_recycle_head = NULL;
 
 /** @brief Lock to sync thr_create and the newly created child thread */
 static mutex_t fork_mp;
@@ -61,6 +64,9 @@ static mutex_t create_mp;
 
 /** @brief Lock to sync thread linked-list operation */
 static mutex_t thr_stk_list_mp;
+
+/** @brief Lock to the list of availavble address */
+// static mutex_t thr_stk_recycle_list_mp;
 
 /** @breif Lock for join operation */
 static mutex_t join_mp;
@@ -75,10 +81,10 @@ static mutex_t join_mp;
  */
 thr_stk_t main_thr_stk;
 
-/* -- Utilities for linked list -- */
+/* -- Utilities for thr_stk linked list -- */
 
 /*  @note There are three utilities find/insert/remove.
- *        Only one thread thread can execute one of three
+ *        Only one thread can execute one of the three
  *        function at a time.
  */
 
@@ -86,27 +92,34 @@ thr_stk_t main_thr_stk;
  *
  *  Search if the utid is in the thread list.
  *
- *  @param utid The user thread id issued by libthread.
+ *  @param  utid The user thread id issued by libthread.
  *  @return The address of utid's header struct. If not found, return NULL.
  */
-static thr_stk_t *thr_find(int utid) {
+static thr_stk_t *thr_find(thr_stk_t **head, int utid, mutex_t *mp) {
     /* begin critical section */
-    mutex_lock(&thr_stk_list_mp);
+    mutex_lock(mp);
 
-    /* rraverse from head */
-    thr_stk_t *curr_thr_stk = head;
+    /* check null pointer */
+    if (!head || !(*head)) {
+        mutex_unlock(mp);
+        return NULL;
+    }
+
+    /* traverse from head */
+    thr_stk_t *curr_thr_stk = *head;
     while (curr_thr_stk != NULL) {
         /* utid was found */
         if (curr_thr_stk->utid == utid) {
             /* dnd critical section */
-            mutex_unlock(&thr_stk_list_mp);
+            mutex_unlock(mp);
             return curr_thr_stk;
         }
         curr_thr_stk = curr_thr_stk->next;
     }
 
-    /* dnd critical section */
-    mutex_unlock(&thr_stk_list_mp);
+    /* end critical section */
+    mutex_unlock(mp);
+
     /* utid was not found */
     return NULL;
 }
@@ -117,14 +130,14 @@ static thr_stk_t *thr_find(int utid) {
  *  @return -1 if the input thr_stk is NULL.
  *             else it should success and return 0.
  */
-static int thr_insert(thr_stk_t *thr_stk) {
+static int thr_insert(thr_stk_t **head, thr_stk_t *thr_stk, mutex_t *mp) {
     /* begin critical section */
-    mutex_lock(&thr_stk_list_mp);
+    mutex_lock(mp);
 
     /* check pointer */
-    if (thr_stk == NULL) {
+    if (!thr_stk || !head) {
         /* end critical section */
-        mutex_unlock(&thr_stk_list_mp);
+        mutex_unlock(mp);
         return -1;
     }
 
@@ -132,24 +145,24 @@ static int thr_insert(thr_stk_t *thr_stk) {
     assert(thr_stk->state == THR_UNRUNNABLE);
 
     /* no threads in the list */
-    if (head == NULL) {
-        head = thr_stk;
+    if (*head == NULL) {
+        *head = thr_stk;
     }
     /* insert */
     else {
         /* set next */
-        thr_stk->next = head->next;
-        head->next = thr_stk;
+        thr_stk->next = (*head)->next;
+        (*head)->next = thr_stk;
 
         /* set prev */
-        thr_stk->prev = head;
+        thr_stk->prev = (*head);
         if (thr_stk->next) {
             thr_stk->next->prev = thr_stk;
         }
     }
 
     /* end critical section */
-    mutex_unlock(&thr_stk_list_mp);
+    mutex_unlock(mp);
     return 0;
 }
 
@@ -159,28 +172,28 @@ static int thr_insert(thr_stk_t *thr_stk) {
  *  @return -1 thr_stk is empty, else success and return 0.
  *
 */
-static int thr_remove(thr_stk_t *thr_stk) {
+static int thr_remove(thr_stk_t **head, thr_stk_t *thr_stk, mutex_t *mp) {
     /* begin critical section */
-    mutex_lock(&thr_stk_list_mp);
+    mutex_lock(mp);
 
-    /* nuul pointer */
-    if (thr_stk == NULL) {
+    /* null pointer */
+    if (!thr_stk || !head) {
         /* end critical section */
-        mutex_unlock(&thr_stk_list_mp);
+        mutex_unlock(mp);
         return -1;
     }
 
     /* utid is the only element */
-    if (thr_stk == head) {
-        head = NULL;
+    if (thr_stk == *head) {
+        *head = NULL;
         /* end critical section */
-        mutex_unlock(&thr_stk_list_mp);
+        mutex_unlock(mp);
         return 0;
     }
 
     /* utid is the first element in list */
     if (thr_stk->prev == NULL) {
-        head = thr_stk->next;
+        *head = thr_stk->next;
         if (thr_stk->next) {
             thr_stk->next->prev = NULL;
         }
@@ -191,7 +204,7 @@ static int thr_remove(thr_stk_t *thr_stk) {
         }
     }
     /* end critical section */
-    mutex_unlock(&thr_stk_list_mp);
+    mutex_unlock(mp);
     return 0;
 }
 
@@ -232,7 +245,7 @@ static void *stk_alloc(void *hi, int nbyte) {
  *        pairs of locks interact with thr_join that ensure the
  *        thr_join is thread-safe.
  *
- *  @param thr_stk The address of thr_stk, (the jointee thread).
+ *  @param  thr_stk The address of thr_stk, (the jointee thread).
  *  @return -1 if fail, else return 0 as success.
  */
 static int _remove_stk_frame(thr_stk_t *thr_stk) {
@@ -265,7 +278,7 @@ int thr_join(int tid, void **statusp) {
     mutex_lock(&join_mp);
 
     /* check if tid is currently registered */
-    thr_stk_t *thr_stk = thr_find(tid);
+    thr_stk_t *thr_stk = thr_find(&thr_created_head, tid, &thr_stk_list_mp);
     if (thr_stk == NULL) {
         return -1;
     }
@@ -298,7 +311,7 @@ int thr_join(int tid, void **statusp) {
     mutex_unlock(&thr_stk->mp);
 
     /* clean up the thr_stk, only one thread should do this! */
-    if (thr_remove(thr_stk) != 0) {
+    if (thr_remove(&thr_created_head, thr_stk, &thr_stk_list_mp) != 0) {
         return -1;
     }
     if (_remove_stk_frame(thr_stk) != 0) {
@@ -357,7 +370,7 @@ int thr_yield(int tid) {
         return yield(-1);
     else {
         /* Find the thr_stk head using the utid */
-        thr_stk_t *thr_stk = thr_find(tid);
+        thr_stk_t *thr_stk = thr_find(&thr_created_head, tid, &thr_stk_list_mp);
         /* The thr_stk does not exist */
         if (!thr_stk) {
             panic("The utid %d does not exist. \n", tid);
@@ -513,7 +526,7 @@ int thr_init(unsigned int size) {
     mutex_init(&join_mp);
 
     /* add main thread to thread list */
-    if (thr_insert(&main_thr_stk) < 0) {
+    if (thr_insert(&thr_created_head, &main_thr_stk, &thr_stk_list_mp) < 0) {
         return -1;
     }
 
@@ -577,8 +590,8 @@ int thr_create(void *(*func)(void *), void *args) {
      * done before the thread start to run */
     mutex_lock(&fork_mp);
 
-    /* insert to thead list */
-    if (thr_insert(thr_stk) < 0) {
+    /* insert to thread list */
+    if (thr_insert(&thr_created_head, thr_stk, &thr_stk_list_mp) < 0) {
         mutex_unlock(&fork_mp);
         mutex_unlock(&create_mp);
         return -1;
