@@ -104,7 +104,7 @@ STUDENTTESTS = test_mutex test_malloc test_thr_yield our_actual_wait
 ###########################################################################
 THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
               thread.o thread_fork.o thr_create_asm.o get_ebp.o\
-			  sem.o rwlock.o
+	      sem.o rwlock.o handler.o
 
 # Thread Group Library Support.
 #

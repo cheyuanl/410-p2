@@ -6,7 +6,8 @@
  *  instead of just one thread. 
  *
  *  Since the multi-threaded program will not support auto-stack growth,
- *
+ *  we just re-register the handler to overwrite the auto-stack handler
+ *  for legacy code. 
  *
  *  @author Zhipeng zhao (zzhao1)
  *  @bug No known bugs.
@@ -20,17 +21,11 @@
 
 void excp_handler(void *arg, ureg_t *ureg);
 
-/** @brief Install the autostack handler. 
+/** @brief Install the handler. 
  *
- * Pass the stack_high and stack_low to thread lib. Allocate memory
- * for the exception stack. We put the exception stack in heap, so that
- * the Legacy single-threaded stack can grow dynamically withou worrying
- * about the exception stack. At last, we register the handler without
- * specifying the ureg values.
+ *  Just register a handler through swexn.
  *
- * @param stack_high The high addr of the stack for Legacy program.
- * @param stack_low The low addr of the stack for Legacy program.
- * @return Void
+ *  @return Void
  */
 void install_handler() {
     /* Register the handler without specifying the ureg values */
@@ -39,20 +34,19 @@ void install_handler() {
     }                   
 }
 
-/** @brief Autostack handler. 
+/** @brief Exception handler. 
  *
- * Pass the stack_high and stack_low to thread lib. Allocate memory
- * for the exception stack. We put the exception stack in heap, so that
- * the Legacy single-threaded stack can grow dynamically withou worrying
- * about the exception stack. At last, we register the handler without
- * specifying the ureg values.
+ *  When meet a fatal error, we will terminate the whole task instead
+ *  of single thread for a multi-threaded program. Before that, we print
+ *  the register values, the cause of the error, the thread ID.
  *
- * @param arg The opaque argument. Not used here.
- * @param ureg The reg values and cause of the fault. 
+ *  @param arg The opaque argument. Not used here.
+ *  @param ureg The reg values and cause of the fault. 
  *
- * @return Void
+ *  @return Void
  */
 void excp_handler(void *arg, ureg_t *ureg){
+    /* Decode the cause */
     switch(ureg->cause){
         case SWEXN_CAUSE_DIVIDE:
             printf("Divide Error Exception\n"); 
@@ -116,6 +110,8 @@ void excp_handler(void *arg, ureg_t *ureg){
             printf("Invalid Exception Value\n"); 
             lprintf("Invalid Exception Value"); 
     }
+
+    /* Print the register values */
     printf("Thread: %d \n", gettid());
     printf("Registers:\n");
     printf("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x,\n",
@@ -150,6 +146,7 @@ void excp_handler(void *arg, ureg_t *ureg){
     lprintf("eflags = 0x%08x",ureg->eflags);
     lprintf("error_code = 0x%08x",ureg->error_code);
 
+    /* Exit the task */
     task_vanish(-1);
 }
 

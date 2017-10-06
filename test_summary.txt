@@ -5,8 +5,8 @@ The tests are listed in README are labled as "In P2 README"
 
 
 actual_wait: Syscall, covers wait vanish fork yield set_status
-             Not passed yet. It has a big buf, which may require
-             auto stack growth.
+             Passed. 
+             It has a big buf, which may require auto stack growth.
 
 agility_drill: mutex_lock and release. Require full thr_lib.
                passed all misbehave.
@@ -36,7 +36,7 @@ cyclone: Basic thread behaviors with misbehaviors. Covers thr_create,
 
 excellent: A multi-threaded application which sometimes experiences
            a thread crash.
-           Not test yet.
+           Passed.
 
 getpid_test1: Syscall, Test gettid
               Passed. Not suitable for misbehave.
@@ -79,20 +79,20 @@ paraguay: Condition variables. cond_wait, cond_signal. Require thr_yield.
           Passed all misbehave.
 
 racer: Intensive test of Mutex, condition variable and semaphores.
-       Not test yet.
+       passed.
 
 rwlock_downgrade_read_test: test readers vs downgrading writers 
                             for rwlock.
-                            Not test yet.
+                            Passed.
 
 stack_test1: test auto-stack pages.
-             Not test yet.
+             Passed.
 
 startle: simple test of thread creation.
          Passed all misbehave.
 
 switzerland: Test whether the auto-stack survives thr_init()
-             Not test yet.
+             Passed.
 
 thr_exit_join: Simple test for thread_join and exit. 
                Passed all misbehave.

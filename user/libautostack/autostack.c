@@ -36,15 +36,15 @@ static void auto_stack_handler(void *arg, ureg_t *ureg);
 
 /** @brief Install the autostack handler. 
  *
- * Pass the stack_high and stack_low to thread lib. Allocate memory
- * for the exception stack. We put the exception stack in heap, so that
- * the Legacy single-threaded stack can grow dynamically withou worrying
- * about the exception stack. At last, we register the handler without
- * specifying the ureg values.
+ *  Pass the stack_high and stack_low to thread lib. Allocate memory
+ *  for the exception stack. We put the exception stack in heap, so that
+ *  the Legacy single-threaded stack can grow dynamically withou worrying
+ *  about the exception stack. At last, we register the handler without
+ *  specifying the ureg values.
  *
- * @param stack_high The high addr of the stack for Legacy program.
- * @param stack_low The low addr of the stack for Legacy program.
- * @return Void
+ *  @param stack_high The high addr of the stack for Legacy program.
+ *  @param stack_low The low addr of the stack for Legacy program.
+ *  @return Void
  */
 void install_autostack(void *stack_high, void *stack_low) {
     void *exp_low;
@@ -81,16 +81,16 @@ void install_autostack(void *stack_high, void *stack_low) {
 
 /** @brief Autostack handler. 
  *
- * Pass the stack_high and stack_low to thread lib. Allocate memory
- * for the exception stack. We put the exception stack in heap, so that
- * the Legacy single-threaded stack can grow dynamically withou worrying
- * about the exception stack. At last, we register the handler without
- * specifying the ureg values.
+ *  Pass the stack_high and stack_low to thread lib. Allocate memory
+ *  for the exception stack. We put the exception stack in heap, so that
+ *  the Legacy single-threaded stack can grow dynamically withou worrying
+ *  about the exception stack. At last, we register the handler without
+ *  specifying the ureg values.
  *
- * @param arg The opaque argument. Not used here.
- * @param ureg The reg values and cause of the fault. 
+ *  @param arg The opaque argument. Not used here.
+ *  @param ureg The reg values and cause of the fault. 
  *
- * @return Void
+ *  @return Void
  */
 static void auto_stack_handler(void *arg, ureg_t *ureg){
     int size;
