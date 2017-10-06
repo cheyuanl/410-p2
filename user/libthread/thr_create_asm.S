@@ -1,4 +1,5 @@
 #include <syscall_int.h>
+
 .global thr_create_asm
 
 thr_create_asm:
@@ -22,6 +23,8 @@ thr_create_asm:
                              * thread */
     mov     %edx, %ebp      /* restore the expected %ebp for the child
                              * thread */
+    call    install_handler /* Install handler for child thread */
+
     jmp     thr_func_wrapper/* Jump the func for the child thread */
 
 parent_thread:

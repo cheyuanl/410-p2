@@ -23,15 +23,7 @@
 #include <stddef.h>
 #include <assert.h>
 #include <malloc.h>
-
-/** @brief The size of the exception stack in number of pages */
-#define EXP_STK_SIZE 1
-
-/** @brief Get the value of specific bit */
-#define BIT(d,n) (((d) >> (n)) & 1)
-
-/** @brief Get the value of specific bit */
-static void *esp3;
+#include <excp_handler.h>
 
 /** @brief The current aligned stack high addr */
 static void *stack_high_aligned;
@@ -39,7 +31,7 @@ static void *stack_high_aligned;
 /** @brief The current aligned stack low addr */
 static void *stack_low_aligned;
 
-void auto_stack_handler(void *arg, ureg_t *ureg);
+static void auto_stack_handler(void *arg, ureg_t *ureg);
 
 
 /** @brief Install the autostack handler. 
@@ -71,14 +63,14 @@ void install_autostack(void *stack_high, void *stack_low) {
         stack_low_aligned = PAGE_ROUNDDN(stack_low);
 
         /* Allocate memory for exception stack */
-        exp_low = _malloc(PAGE_SIZE*EXP_STK_SIZE);
+        exp_low = _malloc(PAGE_SIZE*EXCP_STK_SIZE);
         if(!exp_low){
             panic("Failed to allocate the exception stack");
         }
 
         /* Calculate the esp3, which is one word higher than the 
          * exception stack*/
-        esp3 = exp_low + PAGE_SIZE*EXP_STK_SIZE;
+        esp3 = exp_low + PAGE_SIZE*EXCP_STK_SIZE;
 
         /* Register the handler without specifying the ureg values */
         if(swexn(esp3, auto_stack_handler, NULL, NULL) < 0){
@@ -100,7 +92,7 @@ void install_autostack(void *stack_high, void *stack_low) {
  *
  * @return Void
  */
-void auto_stack_handler(void *arg, ureg_t *ureg){
+static void auto_stack_handler(void *arg, ureg_t *ureg){
     int size;
     void *new_stack_low;
 

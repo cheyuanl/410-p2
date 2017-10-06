@@ -564,7 +564,7 @@ int thr_create(void *(*func)(void *), void *args) {
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
 
     /* error. no thread was created */;
-    if (ret == -1) {
+    if (ret < 0) {
         if (_remove_stk_frame(thr_stk) < 0) {
             lprintf("warning! remove stk frame failed");
         }
@@ -580,6 +580,7 @@ int thr_create(void *(*func)(void *), void *args) {
     /* insert to thead list */
     if (thr_insert(thr_stk) < 0) {
         mutex_unlock(&fork_mp);
+        mutex_unlock(&create_mp);
         return -1;
     }
 
@@ -598,6 +599,10 @@ int thr_create(void *(*func)(void *), void *args) {
 #endif
 
     int ret_utid = global_utid++;
+
+    /* Install handler */
+    install_handler();
+
     mutex_unlock(&create_mp);
 
     return ret_utid;
