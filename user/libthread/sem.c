@@ -8,10 +8,9 @@
  */
 
 #include <assert.h> /* panic() */
-#include <sem_type.h>
-#include <mutex.h>
 #include <cond.h>
-#include <thr_internals.h>
+#include <mutex.h>
+#include <sem_type.h>
 #include <simics.h>
 
 /** @brief Initialize the semaphore
@@ -20,7 +19,7 @@
  * methods. The sem could be re-init after it is successfully
  * destroyed.
  *
- * @param sem Address of semaphor.
+ * @param sem Address of semaphore.
  * @param count Max allowed threads to decrease the count without
  *              being blocked.
  * @return 0 on success, -1 on error.
@@ -63,43 +62,37 @@ void sem_destroy(sem_t *sem) {
         panic("sem_destroy: The input pointer in null");
     }
 
-    if(!sem->init) {
+    if (!sem->init) {
         panic("sem_destroy: The semaphore hasn't been initialized");
     }
 
-    if(!sem->mutex.lock_available) {
-        panic("sem_destroy: The semaphore is locked by some threads");
-    }
-
-    if(!cv_empty(&(sem->cv))) {
-        panic("sem_destroy: Some threads are still waiting on this sem");
-    }
+    /* delegate condition checking to cv and mutex */
+    cond_destroy(&(sem->cv));
+    mutex_destroy(&(sem->mutex));
 
     /* now we are safe */
     sem->init = 0;
-    mutex_destroy(&(sem->mutex));
-    cond_destroy(&(sem->cv));
 }
 
-/** @brief Wait until the count is greater than zero 
- * 
+/** @brief Wait until the count is greater than zero
+ *
  *  The caller will go to sleep until the sem->count is greater than zero.
- * 
+ *
  *  @param sem The address of semaphore.
  */
-void sem_wait(sem_t *sem) { 
+void sem_wait(sem_t *sem) {
     /* check illegal calls */
     if (!sem) {
         panic("sem_wait: The input pointer in null");
     }
 
-    if(!sem->init) {
+    if (!sem->init) {
         panic("sem_wait: The semaphore hasn't been initialized");
     }
 
     mutex_lock(&(sem->mutex));
 
-    while(sem->count <= 0) {
+    while (sem->count <= 0) {
         /* go to sleep */
         cond_wait(&(sem->cv), &(sem->mutex));
     }
@@ -107,20 +100,20 @@ void sem_wait(sem_t *sem) {
 
     mutex_unlock(&(sem->mutex));
 
-    return; 
+    return;
 }
 
-/** @brief Signal the threads waiting on this semaphore 
- *  
+/** @brief Signal the threads waiting on this semaphore
+ *
  *  @param sem The address of semaphore.
- */ 
-void sem_signal(sem_t *sem) { 
+ */
+void sem_signal(sem_t *sem) {
     /* check illegal calls */
     if (!sem) {
         panic("sem_wait: The input pointer in null");
     }
 
-    if(!sem->init) {
+    if (!sem->init) {
         panic("sem_wait: The semaphore hasn't been initialized");
     }
 
@@ -132,6 +125,5 @@ void sem_signal(sem_t *sem) {
 
     mutex_unlock(&(sem->mutex));
 
-    return; 
-
+    return;
 }

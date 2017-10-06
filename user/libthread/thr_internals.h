@@ -70,11 +70,4 @@ int xchg_wrapper(int *lock_available, int val);
 /** @brief Get the pointer to this thread stack structure */
 thr_stk_t *get_thr_stk();
 
-/** @brief Check if any thread is sleeping on this cv */
-int cv_empty(cond_t *cv);
-
-/** @brief Install handler for multi-threaded program */
-void install_handler(void);
-
-
 #endif /* THR_INTERNALS_H */

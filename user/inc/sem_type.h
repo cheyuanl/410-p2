@@ -9,8 +9,8 @@
 #include <mutex_type.h>
 
 typedef struct sem {
-    /* Indicate whether the mutex is initialized or not. 1 is yes, 0 is
-     * no. If init is 0, it could also mean that the mutex has been
+    /* Indicate whether the semaphore is initialized or not. 1 is yes, 0 is
+     * no. If init is 0, it could also mean that the semaphore has been
      * destroyed. */
     int init;
 

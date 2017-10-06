@@ -15,6 +15,7 @@
 #include <assert.h>
 
 /* Internal helper functions */
+int empty(cond_t *cv);
 static void enq(cond_t *cv, thr_stk_t *thr);
 static int deq(cond_t *cv);
 
@@ -153,7 +154,7 @@ void cond_signal(cond_t *cv)
         mutex_lock(&(cv->mutex));
         int ktid;
         /* Act only when the cv's queue is not empty */
-        if(!cv_empty(cv)){
+        if(!empty(cv)){
             /* Get the first sleeping thread's id in the queue */
             ktid = deq(cv);
             /* Spin on the waking up process. make_runnable would return
@@ -199,7 +200,7 @@ void cond_broadcast(cond_t *cv)
         mutex_lock(&(cv->mutex));
         int ktid;
         /* If the cv's queue is not empty, we keep dequeueing */
-        while(!cv_empty(cv)){
+        while(!empty(cv)){
             /* Dequeue the queue to get the thread id of a sleeping
              * thread. */
             ktid = deq(cv);
@@ -223,7 +224,7 @@ void cond_broadcast(cond_t *cv)
  *  @return 1 if the queue is empty, 0 if not.
  **/
 
-int cv_empty(cond_t *cv){
+int empty(cond_t *cv){
     return (cv->head == NULL);
 }
 
@@ -241,7 +242,7 @@ void enq(cond_t *cv, thr_stk_t *thr){
     lprintf("Enqueue ktid = %d \n", thr->ktid);
     /* If the queue is empty initially, we intialize the head and tail
      * pointer to this very first thread item. */
-    if(cv_empty(cv)){
+    if(empty(cv)){
         cv->head = thr;
         cv->tail = thr;
     }
@@ -269,7 +270,7 @@ int deq(cond_t *cv){
     /* No element in queue. This should not happen, since the caller
      * is responsible to check if the queue is empty or not before even
      * call this method. */
-    if(cv_empty(cv)){
+    if(empty(cv)){
         panic("Cond_variable: dequeue an empty queue!");
         return -1;
     }
