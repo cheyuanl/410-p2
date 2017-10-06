@@ -1,7 +1,7 @@
 /** @file thr_internals.h
  *
- *  @brief This file may be used to define things
- *         internal to the thread library.
+ *  @brief This file contains Macros, global variables and data structures
+ *  that are internal to the thread library.
  */
 
 #ifndef THR_INTERNALS_H
@@ -18,7 +18,7 @@
 /** @brief Round down an address to page size and cast it to pointer type */
 #define PAGE_ROUNDDN(p) (void *)(PAGE_ALIGN_MASK & ((unsigned int)(p)))
 
-/** The bounds of main thread's stack */
+/** @brief The bounds of main thread's stack */
 void *main_stk_lo;
 void *main_stk_hi;
 
@@ -54,8 +54,8 @@ struct thr_stk_t {
     thr_stk_t *cv_next; /* pointer to next thread in the cv chain */
     thr_stk_t *next;    /* pointer to next thread in thread list */
     thr_stk_t *prev;    /* pointer to prev thread in thread list */
-    int utid;           /* user thread id */
-    int ktid;           /* kernel thread id */
+    int utid;           /* thread id from user's perspective */
+    int ktid;           /* thread id from kernel's perspective */
     thr_state_t state;  /* state of this thread */
     void *exit_status;  /* exit status place holder when thr_exit called */
     mutex_t mp;         /* mutex for this structure */

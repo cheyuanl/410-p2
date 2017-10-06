@@ -17,11 +17,6 @@
 #include <mutex.h>
 #include <thr_internals.h>
 
-#include <thread.h> /* Just for */
-#include <libsimics/simics.h>
-#include <syscall.h>
-#endif
-
 /** @brief Malloc wrapper.
  *
  *  @param __size The request memory size in bytes.
