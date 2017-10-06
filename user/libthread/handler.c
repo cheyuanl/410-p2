@@ -9,7 +9,7 @@
  *  we just re-register the handler to overwrite the auto-stack handler
  *  for legacy code. 
  *
- *  @author Zhipeng zhao (zzhao1)
+ *  @author Zhipeng Zhao (zzhao1)
  *  @bug No known bugs.
  */
 #include <stdio.h>
@@ -36,7 +36,7 @@ void install_handler() {
 
 /** @brief Exception handler. 
  *
- *  When meet a fatal error, we will terminate the whole task instead
+ *  When meeting a fatal error, we will terminate the whole task instead
  *  of single thread for a multi-threaded program. Before that, we print
  *  the register values, the cause of the error, the thread ID.
  *

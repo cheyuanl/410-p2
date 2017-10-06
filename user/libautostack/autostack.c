@@ -112,7 +112,7 @@ static void auto_stack_handler(void *arg, ureg_t *ureg){
         /* Double current stack size */
         new_stack_low = stack_low_aligned - size;
         if(new_pages(new_stack_low, size) < 0){
-                panic("Failed to allocate the growth stack");
+            panic("Failed to allocate the growth stack");
         }
         stack_low_aligned = new_stack_low;
     }

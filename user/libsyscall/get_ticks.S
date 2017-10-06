@@ -1,3 +1,4 @@
+/* get_ticks.S */
 #include <syscall_int.h>
 
 .global get_ticks

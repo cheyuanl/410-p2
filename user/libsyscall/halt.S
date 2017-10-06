@@ -1,3 +1,4 @@
+/* halt.S */
 #include <syscall_int.h>
 
 .global halt

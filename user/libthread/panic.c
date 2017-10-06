@@ -41,14 +41,7 @@ void panic(const char *fmt, ...)
 	vprintf(fmt, vl);
 	va_end(vl);
 	printf("\n");
+        /* We the panic is called, we will terminate the process after
+         * the information has been printed. */
         task_vanish(-1);
-/*
-	volatile static int side_effect = 0;
-	while (1) {
-		// exact authorship uncertain, popularized by Heinlein
-		printf("When in danger or in doubt, run in circles, scream and shout.\n");
-		lprintf("When in danger or in doubt, run in circles, scream and shout.");
-		++side_effect;
-	}
-*/
 }

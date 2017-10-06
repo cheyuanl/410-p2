@@ -1,8 +1,14 @@
-/*
- * these functions should be thread safe.
- * It is up to you to rewrite them
- * to make them thread safe.
+/** @file malloc.c
+ *  @brief Thread-safe malloc family wrapper.
  *
+ *  To make the malloc thread-safe, we just put a hammer there,
+ *  a global mutex that initialized at thr_init() and lock the
+ *  malloc methods. Since, malloc touches Heap which is shared
+ *  by all the threads, we just lock these methods, so that at
+ *  one time only one thread can manipulate on Heap. 
+ *
+ *  @author Zhipeng Zhao (zzhao1)
+ *  @bug No known bugs.
  */
 
 #include <stdlib.h>
@@ -11,30 +17,30 @@
 #include <mutex.h>
 #include <thr_internals.h>
 
-#define MY_DEBUG
-
-#ifdef MY_DEBUG
 #include <thread.h> /* Just for */
 #include <libsimics/simics.h>
 #include <syscall.h>
 #endif
 
+/** @brief Malloc wrapper.
+ *
+ *  @param __size The request memory size in bytes.
+ *  @return malloc's return value
+ **/
 void *malloc(size_t __size)
 {
     mutex_lock(&malloc_mp);
-#ifdef MY_DEBUG
-    lprintf("Utid %d, Ktid %d gets the malloc lock.\n", 
-             thr_getid(), gettid());
-#endif
     void *ret = _malloc(__size);
     mutex_unlock(&malloc_mp);
-#ifdef MY_DEBUG
-    lprintf("Utid %d, Ktid %d releases the malloc lock.\n", 
-             thr_getid(), gettid());
-#endif
     return ret;
 }
 
+/** @brief Calloc wrapper.
+ *
+ *  @param __nelt The number of elements to be allocated
+ *  @param __eltsize The size of elements
+ *  @return calloc's return value
+ **/
 void *calloc(size_t __nelt, size_t __eltsize)
 {
     mutex_lock(&malloc_mp);
@@ -43,6 +49,13 @@ void *calloc(size_t __nelt, size_t __eltsize)
     return ret;
 }
 
+
+/** @brief Realloc wrapper.
+ *
+ *  @param __buf The memory that to be reallocated
+ *  @param __new_size The new size for the memory block
+ *  @return realloc's return value
+ **/
 void *realloc(void *__buf, size_t __new_size)
 {
     mutex_lock(&malloc_mp);
@@ -51,18 +64,15 @@ void *realloc(void *__buf, size_t __new_size)
     return ret;
 }
 
+
+/** @brief Free wrapper.
+ *
+ *  @param __buf The memory that to be freed
+ *  @return void
+ **/
 void free(void *__buf)
 {
     mutex_lock(&malloc_mp);
-#ifdef MY_DEBUG
-    lprintf("Utid %d, Ktid %d gets the free lock.\n", 
-             thr_getid(), gettid());
-#endif
     _free(__buf);
     mutex_unlock(&malloc_mp);
-#ifdef MY_DEBUG
-    lprintf("Utid %d, Ktid %d releases the free lock.\n", 
-             thr_getid(), gettid());
-#endif
-    return;
 }

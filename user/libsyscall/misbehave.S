@@ -1,9 +1,11 @@
+/* misbehave.S */
 #include <syscall_int.h>
 
 .global misbehave
 misbehave:
-    push    %esi	         /* Save callee-save register */
-    movl    8(%esp), %esi    /* Pass the address of syscall arugments to %esi if syscall require more than one parameter */    
+    push    %esi	     /* Save callee-save register */
+    movl    8(%esp), %esi    /* Save the parameter to %esi to pass to system 
+                              * call */    
     int     $MISBEHAVE_INT   /* System call */
-    pop     %esi	         /* Restore callee-save register */
+    pop     %esi	     /* Restore %esi */
     ret                      /* Return */

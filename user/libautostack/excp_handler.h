@@ -1,6 +1,6 @@
 /** @file excp_handler.h
- *  @brief This file defines global variables used for exception 
- *         handling
+ *  @brief This file defines global variables and Macros used for 
+ *         exception handling.
  */
 
 #ifndef _EXCP_HANDLER_H

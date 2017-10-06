@@ -1,9 +1,14 @@
 /** @file cond.c
  *  @brief Condition Variable library.
  *
- *  This file contains methods for condition variables
+ *  This file contains methods for condition variables. Condition
+ *  variables are used for waiting for mutex-protected state to 
+ *  be modified by some other threads. The thread in cond_wait will
+ *  voluntarily go to sleep so that the CPU can be occupied by other
+ *  threads. The cond_wait thread will be singled by other thread
+ *  through cond_signal.
  *
- *  @author Zhipeng zhao (zzhao1)
+ *  @author Zhipeng Zhao (zzhao1)
  *  @bug No known bugs.
  */
 #include <stdio.h>
@@ -27,8 +32,8 @@ static int deq(cond_t *cv);
  *  multiple times after initialization(before the condition variable is
  *  destroyed).
  *
- *
- * @return 0 on success, negative number on error
+ *  @param cv The condition variable object
+ *  @return 0 on success, negative number on error
  */
 int cond_init(cond_t *cv)
 {
@@ -64,6 +69,7 @@ int cond_init(cond_t *cv)
  *  destroyed. It's illegal to call this function when the CV_Mutex
  *  is still locked or threads are still blocked.
  *
+ *  @param cv The condition variable object
  *  @return Void
  **/
 
@@ -96,6 +102,8 @@ void cond_destroy(cond_t *cv)
 /** @brief cond_wait Atomically realse the lock and block the calling
  *  thread. Will re-acquire the lock before leaving this function.
  *
+ *  @param cv The condition variable object
+ *  @param mp The outside mutex
  *  @return Void
  **/
 
@@ -136,6 +144,15 @@ void cond_wait(cond_t *cv, mutex_t *mp)
  *  This method will only wake up the very first thread in the cv's
  *  queue. If there is no sleeping thread in the queue, we do nothing.
  *
+ *  Spin on the waking up process. make_runnable would return 0 only 
+ *  when ktid exists and thread-ktid is in sleep. Since ktid comes 
+ *  from the thread queue, we are sure ktid exists, and thread-ktid 
+ *  is going to sleep. But we are not sure if thread-ktid is already 
+ *  in sleep or not, because this thread might execute before thread-ktid 
+ *  really gets into sleep. So we keep trying make_runnable, until 
+ *  thread-ktid goes to sleep and make_runnable wakes it up successfully
+ *
+ *  @param cv The condition variable object
  *  @return Void
  **/
 
@@ -157,14 +174,7 @@ void cond_signal(cond_t *cv)
         if(!empty(cv)){
             /* Get the first sleeping thread's id in the queue */
             ktid = deq(cv);
-            /* Spin on the waking up process. make_runnable would return
-             * 0 only when ktid exists and thread-ktid is in sleep. Since
-             * ktid comes from the thread queue, we are sure ktid exists,
-             * and thread-ktid is going to sleep. But we are not sure if
-             * thread-ktid is already in sleep or not, because this
-             * thread might execute before thread-ktid really gets into
-             * sleep. So we keep trying make_runnable, until thread-ktid
-             * goes to sleep and make_runnable wakes it up successfully*/
+            /* Busy waitting on waking up process */
             while(make_runnable(ktid) < 0)
                 continue;
         }
@@ -183,6 +193,7 @@ void cond_signal(cond_t *cv)
  *  first. Since we have the cv_mutex now, the thread would not go to
  *  sleep during the execution of waking up.
  *
+ *  @param cv The condition variable object
  *  @return Void
  **/
 void cond_broadcast(cond_t *cv)
@@ -204,9 +215,7 @@ void cond_broadcast(cond_t *cv)
             /* Dequeue the queue to get the thread id of a sleeping
              * thread. */
             ktid = deq(cv);
-            /* Spin on the condition check of make_runnable to make sure
-             * the thread-ktid is actually in sleep and then we wake it
-             * up successfully */
+            /* Busy waitting on waking up process */
             while(make_runnable(ktid) < 0)
                 continue;
         }
@@ -216,11 +225,13 @@ void cond_broadcast(cond_t *cv)
     }
 }
 
+/*****************************/
 /* Internal helper functions */
-
+/*****************************/
 
 /** @brief empty Check if cv's queue is empty or not.
  *
+ *  @param cv The condition variable object
  *  @return 1 if the queue is empty, 0 if not.
  **/
 
@@ -236,10 +247,11 @@ int empty(cond_t *cv){
  *  data structure has the "cv_next" pointer, which will point to the
  *  next item(thead) in the queue.
  *
+ *  @param cv The condition variable object
+ *  @param thr The thread object that needs to be stored in queue
  *  @return Void
  **/
 void enq(cond_t *cv, thr_stk_t *thr){
-    lprintf("Enqueue ktid = %d \n", thr->ktid);
     /* If the queue is empty initially, we intialize the head and tail
      * pointer to this very first thread item. */
     if(empty(cv)){
@@ -262,6 +274,7 @@ void enq(cond_t *cv, thr_stk_t *thr){
  *  We remove a thread from the head of the queue. If this is the last
  *  thread item, we set the head and tail pointers as NULL.
  *
+ *  @param cv The condition variable object
  *  @return thread id of the first thread item in the queue on success,
  *  otherwise return -1.
  **/
@@ -287,7 +300,6 @@ int deq(cond_t *cv){
             cv->head = (void*)(((thr_stk_t*)cv->head)->cv_next);
         }
     }
-    lprintf("Dequeue ktid = %d \n", thr->ktid);
     /* We only return the ktid field of this thread. */
     return thr->ktid;
 }
