@@ -384,7 +384,7 @@ void thr_exit(void *status) {
     thr_stk->state = THR_EXITED;
     /* there might be multiple joiner try to join on this thread at
        this point, signal to all of them, but only one of them will
-       get the chance to join this thread.ß */
+       get the chance to join this thread.*/
     cond_broadcast(&thr_stk->cv);
 
     /* release the lock */
