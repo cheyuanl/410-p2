@@ -5,7 +5,11 @@
  *  and implementation of API for libthread.
  *
  *  @author Che-Yuan Liang (cheyuanl)
- *  @bug No known bugs.
+ *  @bug Currently we don't reuse the same stack address. Althouth the stack
+ *  memory will be removed properly. The thread stack's starting point  will
+ *  keep decreasing, until it hits brk.
+ *  Also, we didn't check if the currently tid is duplicated, since it
+ *  is not likely to overflow the global_tid in the life time of a program..
  */
 
 #include <assert.h>
@@ -18,10 +22,6 @@
 #include <thread.h>
 #include <stddef.h>
 
-#define MY_DEBUGx
-
-/** @brief Define NULL */
-//#define NULL 0
 /** @brief Define esp align */
 #define ESP_ALIGN 4
 
@@ -32,12 +32,12 @@ static int global_utid = 0;
 
 /** @brief Record the kernel tid of main(legacy) thread
  *
- *  This variable should be set when thr_init is called.
+ *  This variable should be set when thr_init() is called.
  *  The purpose is to retrieve the main_thr_stk differently than what we do for
  *  normal thread's thr_stk_t.
  *  The underlying assumption is that thr_init will only be called once by
  *  the main thread.
-*/
+ */
 static int main_thr_ktid;
 
 /** @brief The size of a thread stack
@@ -67,7 +67,7 @@ static mutex_t join_mp;
 
 /** @brief The thread stack for main(legacy) thread
  *
- *  In our thread library, we assume each thread has a header structure,
+ *  In our thread library, we define each thread has a header structure,
  *  thr_stk_t in order to manage the threads. Since the legacy programs
  *  don't have this header, we reserve this field for the main thread,
  *  making it compatible to the our thread management data structure.
@@ -315,9 +315,6 @@ int thr_join(int tid, void **statusp) {
  *  @return Void. This function should vanish before return.
  */
 void thr_func_wrapper(void *(*func)(void *), void *args) {
-#ifdef MY_DEBUG
-    lprintf("Hello from func wrapper");
-#endif
     thr_stk_t *thr_stk = get_thr_stk();
 
     /* wait until the ktid field is set by the creation thread */
@@ -329,10 +326,6 @@ void thr_func_wrapper(void *(*func)(void *), void *args) {
     mutex_unlock(&fork_mp);
 
     void *ret_val = func(args);
-
-#ifdef MY_DEBUG
-    lprintf("child returned with (int)ret_val: %d", (int)ret_val);
-#endif
 
     /* if func didn't call thr_exit, it will reach here */
     thr_stk->state = THR_EXITED;
@@ -363,12 +356,6 @@ int thr_yield(int tid) {
             panic("The utid %d does not exist. \n", tid);
             return -1;
         } else {
-#ifdef MY_DEBUG
-            lprintf("thr->utid = %d, thr->ktid = %d \n", thr_stk->utid,
-                    thr_stk->ktid);
-            lprintf("thr_stk addr = %p \n", thr_stk);
-            MAGIC_BREAK;
-#endif
             return yield(thr_stk->ktid);
         }
     }
@@ -436,11 +423,6 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
     mutex_init(&thr_stk->mp);
     cond_init(&thr_stk->cv);
 
-#ifdef MY_DEBUG
-    lprintf("utid: %d was issued", thr_stk->utid);
-    lprintf("utid addr: %p was issued", &thr_stk->utid);
-#endif
-
     return thr_stk;
 }
 
@@ -455,29 +437,16 @@ thr_stk_t *install_stk_header(void *thr_stk_lo, void *args, void *func) {
  *  @return -1 if fail, 0 if success.s
  */
 int thr_init(unsigned int size) {
-#ifdef MY_DEBUG
-    lprintf("thr_init was called");
-    lprintf("requested stack size: %d", size);
-#endif
 
     /* round-up thread stack size to page size */
     stk_size = (int)PAGE_ROUNDUP(size + sizeof(thr_stk_t));
-#ifdef MY_DEBUG
-    lprintf("stk_size was set to %d", stk_size);
-#endif
 
     /* set the head of thread stack to be slightly lower then main_stk_lo */
     thr_stk_head = PAGE_ROUNDDN(main_stk_lo);
-#ifdef MY_DEBUG
-    lprintf("stk_head was set to %p", thr_stk_head);
-#endif
 
     /* set the candidate address to allocate the stack */
     thr_stk_curr = thr_stk_head;
 
-#ifdef MY_DEBUG
-    lprintf("initializing main_thr_stk");
-#endif
     /* Initialize main thread's stack header */
     memset(&main_thr_stk, 0, sizeof(thr_stk_t));
     main_thr_stk.utid = global_utid++; /* main always get uid = 0 */
@@ -535,10 +504,7 @@ int thr_create(void *(*func)(void *), void *args) {
     /* allocate the thread stack header and stack for the thread */
     void *thr_stk_lo = stk_alloc(thr_stk_curr, stk_size);
 
-#ifdef MY_DEBUG
-    lprintf("Allocating space for thread stack");
-    lprintf("stk_alloc: %p", thr_stk_lo);
-#endif
+    mutex_unlock(&create_mp);
 
     /* allocation failed */
     if (thr_stk_lo == NULL) {
@@ -551,16 +517,6 @@ int thr_create(void *(*func)(void *), void *args) {
     /* install the header structure for child thread stack */
     thr_stk_t *thr_stk = install_stk_header(thr_stk_lo, args, (void *)func);
 
-#ifdef MY_DEBUG
-    /* NOTE: a thread newly created by thread fork has no software exception
-     *       handler registered */
-    lprintf("thr_stk addr %p", thr_stk);
-    lprintf("ebp addr %p", &thr_stk->zero);
-    lprintf("esp addr %p", &thr_stk->ret_addr);
-    lprintf("func addr %p", func);
-    lprintf("ret_addr %p", thr_stk->ret_addr);
-#endif
-
     int ret = thr_create_asm(&thr_stk->zero, &thr_stk->ret_addr);
 
     /* error. no thread was created */;
@@ -568,7 +524,6 @@ int thr_create(void *(*func)(void *), void *args) {
         if (_remove_stk_frame(thr_stk) < 0) {
             lprintf("warning! remove stk frame failed");
         }
-        mutex_unlock(&create_mp);
         return -1;
     }
 
@@ -578,12 +533,14 @@ int thr_create(void *(*func)(void *), void *args) {
     mutex_lock(&fork_mp);
 
     /* insert to thead list */
+    mutex_lock(&create_mp);
     if (thr_insert(thr_stk) < 0) {
         mutex_unlock(&fork_mp);
         mutex_unlock(&create_mp);
         return -1;
     }
 
+    mutex_unlock(&create_mp);
     /* setup the final piece of info before child can run */
     thr_stk->ktid = ret;
     thr_stk->state = THR_RUNNABLE;
@@ -593,17 +550,13 @@ int thr_create(void *(*func)(void *), void *args) {
 
     mutex_unlock(&fork_mp);
 
-#ifdef MY_DEBUG
-    lprintf("thr_create_asm return: %p", (void *)ret);
-    lprintf("Hello from parent");
-#endif
-
+    mutex_lock(&create_mp);
     int ret_utid = global_utid++;
+
+    mutex_unlock(&create_mp);
 
     /* Install handler */
     install_handler();
-
-    mutex_unlock(&create_mp);
 
     return ret_utid;
 }
