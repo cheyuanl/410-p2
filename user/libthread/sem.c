@@ -1,7 +1,7 @@
 /** @file sem.c
  *  @brief Implementation of semaphore API.
  *
- *  This file contains methods semaphores.
+ *  This file contains methods for semaphores.
  *
  *  @author Che-Yuan Liang (cheyuanl)
  *  @bug No known bugs.

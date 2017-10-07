@@ -1,10 +1,10 @@
 /** @file rwlock.c
  *  @brief Implementation of reader/writer lock.
  *
- *  This file contains implementation for rwlock.
- *  TODO: design rational.
- *
- *
+ *  This file contains implementation for rwlock. We implement
+ *  a rwlock that satisfy the second rw problem. That is it is
+ *  in favor of writer, whenever there is any writer waiting.
+ *  the reader cannot grab the lock.
  *
  *  @author Che-Yuan Liang (cheyuanl)
  *  @bug No known bugs.
@@ -122,7 +122,7 @@ void rwlock_lock(rwlock_t *rwlock, int type) {
  *  threads should come in a FIFO manner based on the current implementation
  *  of conditional variable.
  *
- *  @param rwlock
+ *  @param rwlock The address of rwlock.
  *  @return Void.
  */
 void rwlock_unlock(rwlock_t *rwlock) {
