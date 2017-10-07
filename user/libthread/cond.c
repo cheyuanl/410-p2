@@ -2,7 +2,7 @@
  *  @brief Condition Variable library.
  *
  *  This file contains methods for condition variables. Condition
- *  variables are used for waiting for mutex-protected state to 
+ *  variables are used for waiting for mutex-protected state to
  *  be modified by some other threads. The thread in cond_wait will
  *  voluntarily go to sleep so that the CPU can be occupied by other
  *  threads. The cond_wait thread will be singled by other thread
@@ -20,7 +20,7 @@
 #include <assert.h>
 
 /* Internal helper functions */
-int empty(cond_t *cv);
+static int empty(cond_t *cv);
 static void enq(cond_t *cv, thr_stk_t *thr);
 static int deq(cond_t *cv);
 
@@ -144,12 +144,12 @@ void cond_wait(cond_t *cv, mutex_t *mp)
  *  This method will only wake up the very first thread in the cv's
  *  queue. If there is no sleeping thread in the queue, we do nothing.
  *
- *  Spin on the waking up process. make_runnable would return 0 only 
- *  when ktid exists and thread-ktid is in sleep. Since ktid comes 
- *  from the thread queue, we are sure ktid exists, and thread-ktid 
- *  is going to sleep. But we are not sure if thread-ktid is already 
- *  in sleep or not, because this thread might execute before thread-ktid 
- *  really gets into sleep. So we keep trying make_runnable, until 
+ *  Spin on the waking up process. make_runnable would return 0 only
+ *  when ktid exists and thread-ktid is in sleep. Since ktid comes
+ *  from the thread queue, we are sure ktid exists, and thread-ktid
+ *  is going to sleep. But we are not sure if thread-ktid is already
+ *  in sleep or not, because this thread might execute before thread-ktid
+ *  really gets into sleep. So we keep trying make_runnable, until
  *  thread-ktid goes to sleep and make_runnable wakes it up successfully
  *
  *  @param cv The condition variable object
