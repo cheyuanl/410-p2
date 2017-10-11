@@ -97,12 +97,12 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test_mutex test_malloc test_thr_yield our_actual_wait
+STUDENTTESTS = test_xadd
 
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o xchg_wrapper.o mutex.o cond.o\
+THREAD_OBJS = malloc.o panic.o xadd_wrapper.o mutex.o cond.o\
               thread.o thr_create_asm.o get_ebp.o\
 	      sem.o rwlock.o handler.o
 

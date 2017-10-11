@@ -84,7 +84,7 @@ void cond_destroy(cond_t *cv)
               "initialized!");
     }
     /* The CV_Mutex is locked */
-    else if(!cv->mutex.lock_available){
+    else if(mutex_underlocked(&(cv->mutex))){
         panic("Cond_destroy: Some threads are still locked!");
     }
     /* Some threads are still in sleep */
